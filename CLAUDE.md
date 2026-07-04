@@ -69,13 +69,19 @@ current code already honours the OS `prefers-reduced-motion` setting via
 
 ## Status
 
-- **Phase 1 (walking skeleton) — done.** Scaffold runs; one placeholder scene (a
-  glowing, rotating, bean-shaped mitochondrion in dark space) responds to scroll;
-  deployed live to Vercel. The palette, scroll pipeline, reusable scene
-  structure, and GitHub→Vercel auto-deploy are all proven.
-- **Not built yet (later, verified phases):** the other JOURNEY.md scenes, quiz
-  gates, the settled/frontier threshold, progress bar, audio, mobile
-  optimizations, true bloom post-processing, real cristae geometry.
+- **Phase 1 (walking skeleton) — done.** Scaffold runs; the glowing, rotating,
+  bean-shaped mitochondrion responds to scroll; deployed live to Vercel. Palette,
+  scroll pipeline, reusable scene structure, and GitHub→Vercel auto-deploy proven.
+- **Scene 2 (outer membrane / the gateway) — done.** `scenes/OuterMembraneScene.jsx`
+  studs the surface with cyan porins and small cyan/white molecules drifting in
+  and out through them (never gold; only the outer membrane; small molecules
+  only). The camera now uses a **waypoint pattern** in `CameraRig.jsx` (a list of
+  camera poses pinned to scroll positions, blended smoothly) — add a waypoint per
+  new scene. `App.jsx` fades the Scene 0 title out and the Scene 2 copy in by
+  scroll position; `ScrollControls pages` is 5.
+- **Not built yet (later, verified phases):** the remaining JOURNEY.md scenes
+  (3 cristae onward), quiz gates, the settled/frontier threshold, progress bar,
+  audio, mobile optimizations, true bloom post-processing, real cristae geometry.
 
 ## Colour grammar (JOURNEY.md section 4)
 
