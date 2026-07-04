@@ -34,3 +34,79 @@ body {
   /* The 3D scroll region manages its own scrolling, so hide the window's. */
   overflow: hidden;
 }
+
+/* Charge-meter electricity: an electric-blue crackle glow INSIDE and AROUND the
+   bar, shown while the charge is draining in Scene 6 (its opacity is driven by
+   scroll in App.jsx). The `steps` timing makes the glow jump erratically, like
+   arcing electricity, rather than pulse smoothly. */
+@keyframes charge-electric-flicker {
+  0% {
+    box-shadow: 0 0 4px 1px rgba(160, 205, 255, 0.4), inset 0 0 6px 1px rgba(160, 205, 255, 0.35);
+  }
+  20% {
+    box-shadow: 0 0 15px 3px rgba(190, 225, 255, 0.95), inset 0 0 12px 2px rgba(190, 225, 255, 0.8);
+  }
+  35% {
+    box-shadow: 0 0 3px 1px rgba(160, 205, 255, 0.25), inset 0 0 5px 1px rgba(160, 205, 255, 0.25);
+  }
+  55% {
+    box-shadow: 0 0 20px 4px rgba(210, 235, 255, 1), inset 0 0 16px 3px rgba(210, 235, 255, 0.9);
+  }
+  70% {
+    box-shadow: 0 0 6px 1px rgba(160, 205, 255, 0.5), inset 0 0 8px 1px rgba(160, 205, 255, 0.4);
+  }
+  85% {
+    box-shadow: 0 0 12px 3px rgba(200, 230, 255, 0.85), inset 0 0 12px 2px rgba(200, 230, 255, 0.7);
+  }
+  100% {
+    box-shadow: 0 0 4px 1px rgba(160, 205, 255, 0.4), inset 0 0 6px 1px rgba(160, 205, 255, 0.35);
+  }
+}
+
+.charge-electric {
+  animation: charge-electric-flicker 0.5s steps(1, end) infinite;
+}
+
+/* Respect the reduced-motion preference: hold a steady electric glow, no flicker. */
+@media (prefers-reduced-motion: reduce) {
+  .charge-electric {
+    animation: none;
+    box-shadow: 0 0 12px 2px rgba(190, 225, 255, 0.7), inset 0 0 12px 2px rgba(190, 225, 255, 0.6);
+  }
+}
+
+/* Scene 6 copy sits over the bright, gold ATP-synthase climax, where plain white
+   text washes out. So its colour fades seamlessly between palette-harmonious
+   tones, and a dark halo keeps every letter legible no matter how bright the
+   background gets behind it. */
+@keyframes scene6-text-fade {
+  0% {
+    color: #6fdce8;
+  }
+  25% {
+    color: #beb0ff;
+  }
+  50% {
+    color: #8fe8c8;
+  }
+  75% {
+    color: #ffcf9a;
+  }
+  100% {
+    color: #6fdce8;
+  }
+}
+
+.scene6-copy {
+  color: #6fdce8;
+  animation: scene6-text-fade 14s ease-in-out infinite;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9), 0 0 14px rgba(0, 0, 0, 0.65);
+  font-weight: 500;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene6-copy {
+    animation: none;
+    color: #cfe9ef;
+  }
+}

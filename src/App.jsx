@@ -7,6 +7,7 @@ import { OuterMembraneScene } from './scenes/OuterMembraneScene.jsx'
 import { InnerMembraneScene } from './scenes/InnerMembraneScene.jsx'
 import { MatrixScene } from './scenes/MatrixScene.jsx'
 import { ElectronTransportChainScene } from './scenes/ElectronTransportChainScene.jsx'
+import { AtpSynthaseScene } from './scenes/AtpSynthaseScene.jsx'
 import { GATE1_OFFSET } from './journeyRanges.js'
 
 /*
@@ -15,10 +16,10 @@ import { GATE1_OFFSET } from './journeyRanges.js'
  * <Canvas> is the 3D drawing surface that fills the browser window. Everything
  * inside it is 3D. The <div> text overlays sit on top in plain HTML.
  *
- * <ScrollControls pages={18}> makes the page eighteen screens tall so there is
+ * <ScrollControls pages={22}> makes the page twenty-two screens tall so there is
  * room for the whole journey so far: overview -> membrane -> inside to the
  * cristae -> Quiz Gate 1 -> the spiral dive into the matrix -> the electron
- * transport chain (incl. the Complex II beat). CameraRig moves the camera.
+ * transport chain -> ATP synthase (the climax). CameraRig moves the camera.
  *
  * To add the next JOURNEY.md scene, create a component in /scenes, drop it in
  * beside the others, add a camera waypoint, and lengthen `pages` if needed.
@@ -62,29 +63,31 @@ function OverlayController({
   scene3Ref,
   scene4Ref,
   scene5Ref,
+  scene6Ref,
   gateRef,
   gatePassed,
   meterRef,
   meterFillRef,
+  meterElectricRef,
 }) {
   const scroll = useScroll()
   useFrame(() => {
     const o = scroll.offset
-    // (All thresholds were scaled by 15/18 when the Complex II beat was added.)
+    // (All thresholds were scaled by 18/22 when ATP synthase was added.)
     // Scene 0 title: fully visible at the top, fades out early.
     if (titleRef.current) {
-      titleRef.current.style.opacity = String(1 - clamp01(o / 0.058))
+      titleRef.current.style.opacity = String(1 - clamp01(o / 0.047))
     }
     // Scene 2 copy: fades in at the membrane, back out as we slip inside.
     if (scene2Ref.current) {
-      const inAmount = clamp01((o - 0.183) / 0.033)
-      const outAmount = 1 - clamp01((o - 0.25) / 0.033)
+      const inAmount = clamp01((o - 0.15) / 0.027)
+      const outAmount = 1 - clamp01((o - 0.205) / 0.027)
       scene2Ref.current.style.opacity = String(inAmount * outAmount)
     }
     // Scene 3 copy: fades in during the fold sweep, out as we reach the gate.
     if (scene3Ref.current) {
-      const inAmount = clamp01((o - 0.333) / 0.033)
-      const outAmount = 1 - clamp01((o - 0.383) / 0.025)
+      const inAmount = clamp01((o - 0.273) / 0.027)
+      const outAmount = 1 - clamp01((o - 0.313) / 0.02)
       scene3Ref.current.style.opacity = String(inAmount * outAmount)
     }
     // Quiz card: the question shows once we reach the gate. After it is passed,
@@ -92,28 +95,45 @@ function OverlayController({
     // Pointer-events are only on while the question is up, so the card never
     // blocks scrolling once answered (and hidden buttons can't click).
     if (gateRef.current) {
-      const nearGate = o > 0.383
-      const show = gatePassed ? (nearGate && o < 0.483 ? 1 : 0) : nearGate ? 1 : 0
+      const nearGate = o > 0.313
+      const show = gatePassed ? (nearGate && o < 0.395 ? 1 : 0) : nearGate ? 1 : 0
       gateRef.current.style.opacity = String(show)
       gateRef.current.style.pointerEvents = show && !gatePassed ? 'auto' : 'none'
     }
     // Scene 4 copy: fades in during the matrix float, out before Scene 5.
     if (scene4Ref.current) {
-      const inAmount = clamp01((o - 0.608) / 0.025)
-      const outAmount = 1 - clamp01((o - 0.65) / 0.025)
+      const inAmount = clamp01((o - 0.497) / 0.02)
+      const outAmount = 1 - clamp01((o - 0.532) / 0.02)
       scene4Ref.current.style.opacity = String(inAmount * outAmount)
     }
-    // Scene 5 copy: fades in as we track along the stations, and stays up through
-    // the Complex II beat (the copy covers both parts).
+    // Scene 5 copy: fades in as we track the stations, stays through the Complex
+    // II beat, then fades out as ATP synthase takes over.
     if (scene5Ref.current) {
-      scene5Ref.current.style.opacity = String(clamp01((o - 0.733) / 0.033))
+      const inAmount = clamp01((o - 0.6) / 0.027)
+      const outAmount = 1 - clamp01((o - 0.83) / 0.03)
+      scene5Ref.current.style.opacity = String(inAmount * outAmount)
     }
-    // Charge meter: fades in with Scene 5; its fill climbs as charge builds.
+    // Scene 6 copy: fades in during the ATP synthase orbit/push-in.
+    if (scene6Ref.current) {
+      scene6Ref.current.style.opacity = String(clamp01((o - 0.87) / 0.03))
+    }
+    // Charge meter: fades in with Scene 5, its fill climbs as charge builds, then
+    // DISCHARGES (drops) in Scene 6 as protons flow back through ATP synthase.
     if (meterRef.current) {
-      meterRef.current.style.opacity = String(clamp01((o - 0.675) / 0.033))
+      const meterIn = clamp01((o - 0.552) / 0.027)
+      const meterOut = 1 - clamp01((o - 0.96) / 0.03)
+      meterRef.current.style.opacity = String(meterIn * meterOut)
     }
     if (meterFillRef.current) {
-      meterFillRef.current.style.height = `${clamp01((o - 0.7) / 0.117) * 100}%`
+      const build = clamp01((o - 0.573) / 0.096)
+      const discharge = clamp01((o - 0.84) / 0.11)
+      meterFillRef.current.style.height = `${build * (1 - discharge) * 100}%`
+    }
+    // Electricity: visible only while the bar is actively draining (0.84->0.95),
+    // so the crackle reads as the stored charge being spent.
+    if (meterElectricRef.current) {
+      const active = clamp01((o - 0.84) / 0.02) * (1 - clamp01((o - 0.95) / 0.02))
+      meterElectricRef.current.style.opacity = String(active)
     }
   })
   return null
@@ -166,9 +186,11 @@ export default function App() {
   const scene3Ref = useRef(null)
   const scene4Ref = useRef(null)
   const scene5Ref = useRef(null)
+  const scene6Ref = useRef(null)
   const gateRef = useRef(null)
   const meterRef = useRef(null)
   const meterFillRef = useRef(null)
+  const meterElectricRef = useRef(null)
 
   const [gate1Passed, setGate1Passed] = useState(false)
   const [gate1Wrong, setGate1Wrong] = useState(false)
@@ -203,6 +225,7 @@ export default function App() {
           <InnerMembraneScene />
           <MatrixScene />
           <ElectronTransportChainScene />
+          <AtpSynthaseScene />
           <GateLock passed={gate1Passed} />
           <OverlayController
             titleRef={titleRef}
@@ -210,10 +233,12 @@ export default function App() {
             scene3Ref={scene3Ref}
             scene4Ref={scene4Ref}
             scene5Ref={scene5Ref}
+            scene6Ref={scene6Ref}
             gateRef={gateRef}
             gatePassed={gate1Passed}
             meterRef={meterRef}
             meterFillRef={meterFillRef}
+            meterElectricRef={meterElectricRef}
           />
         </ScrollControls>
       </Canvas>
@@ -299,6 +324,24 @@ export default function App() {
         </p>
       </div>
 
+      {/* Scene 6 copy (JOURNEY.md Scene 6, verbatim, with the owner's revised
+          first line). Traces to RESEARCH.md Part A: ATP synthase is a rotary
+          motor spun by protons flowing back, assembling ATP from ADP + phosphate
+          (never from nothing); the body turns over ~its weight in ATP per day by
+          recycling. */}
+      <div ref={scene6Ref} style={{ ...overlayBase, opacity: 0 }}>
+        <p className="scene6-copy" style={copyStyle}>
+          Here&rsquo;s the payoff. All that stored charge has one way out that
+          powers the cell: back through a single machine, ATP synthase. The rush
+          of protons spins it like a revolving door, and every turn snaps loose
+          parts together into ATP, your body&rsquo;s energy currency. It
+          isn&rsquo;t conjured from nothing; the machine bolts together pieces
+          already floating nearby. You mint roughly your own body weight in ATP
+          every single day, not by making that much new stuff, but by recycling a
+          small amount through this motor hundreds of times over.
+        </p>
+      </div>
+
       {/* Charge meter: a qualitative bar that climbs as the gradient builds.
           NO numbers on it (the millivolt figures are marked TO SOURCE and stay
           off the site). Violet to match the pumped protons. */}
@@ -317,30 +360,48 @@ export default function App() {
           gap: 10,
         }}
       >
-        <div
-          style={{
-            width: 14,
-            height: 170,
-            borderRadius: 8,
-            background: 'rgba(255, 255, 255, 0.08)',
-            border: '1px solid rgba(203, 184, 255, 0.45)',
-            overflow: 'hidden',
-            display: 'flex',
-            flexDirection: 'column-reverse',
-          }}
-        >
+        <div style={{ position: 'relative', width: 14, height: 170 }}>
+          {/* The bar track + its climbing/draining fill. */}
           <div
-            ref={meterFillRef}
-            style={{ width: '100%', height: '0%', background: 'linear-gradient(to top, #cbb8ff, #e8dcff)' }}
+            style={{
+              width: '100%',
+              height: '100%',
+              borderRadius: 8,
+              background: 'rgba(255, 255, 255, 0.08)',
+              border: '1px solid rgba(203, 184, 255, 0.45)',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column-reverse',
+            }}
+          >
+            <div
+              ref={meterFillRef}
+              style={{ width: '100%', height: '0%', background: 'linear-gradient(to top, #cbb8ff, #e8dcff)' }}
+            />
+          </div>
+          {/* Electric crackle inside and around the bar while it discharges. Its
+              opacity is driven by scroll (see OverlayController); the flicker
+              animation lives in index.css. */}
+          <div
+            ref={meterElectricRef}
+            className="charge-electric"
+            style={{
+              position: 'absolute',
+              inset: 0,
+              borderRadius: 8,
+              opacity: 0,
+              pointerEvents: 'none',
+            }}
           />
         </div>
         <span
           style={{
-            fontSize: 11,
-            letterSpacing: '0.14em',
+            fontSize: 14,
+            fontWeight: 600,
+            letterSpacing: '0.16em',
             textTransform: 'uppercase',
-            color: '#cbb8ff',
-            opacity: 0.9,
+            color: '#d8ccff',
+            textShadow: '0 1px 4px rgba(0, 0, 0, 0.6)',
           }}
         >
           Charge

@@ -99,20 +99,32 @@ current code already honours the OS `prefers-reduced-motion` setting via
   GOLD electron rises from the MATRIX side (not down the row) and which pumps NO
   proton; the camera swings onto it and holds. First use of gold (energy), violet
   (protons), and teal (the odd-one-out).
+- **Scene 6 (ATP synthase, the climax) — DONE; Quiz Gate 2 NOT built yet.**
+  `scenes/AtpSynthaseScene.jsx` = a distinct rotary motor (base in membrane, stalk,
+  faceted spinning head, 3 catalytic-site markers) at the front-centre of the
+  inner wall. VIOLET protons rush BACK through it (far -> matrix, opposite of Scene
+  5) and spin the head; the Scene 5 charge meter DISCHARGES. Muted-blue ADP pieces
+  and small pale phosphate clusters converge at the head and combine into GOLD ATP
+  coins (never from nothing — the core anti-misconception). Peak gold glow (faked;
+  real bloom still deferred). Scene 5 apparatus fades out on entry. Camera orbits
+  then hero push-ins. Charge meter has an electric-crackle discharge animation
+  (index.css `.charge-electric`); the Scene 6 copy uses a colour-fading, dark-halo
+  treatment (index.css `.scene6-copy`) so it reads over the bright climax.
 - **The inner membrane no longer spins** (needed a fixed orientation for Scene 5's
   stations). The bean + pores still spin in their own scenes, so the cold open
-  stays alive. `ScrollControls pages` is 18. NOTE: adding a scene at the end
+  stays alive. `ScrollControls pages` is 22. NOTE: adding a scene at the end
   re-spaces every scroll constant by a uniform factor (all offsets in CameraRig,
-  journeyRanges, App overlays, and the ETC scene's presence/charge) — keep them
-  in sync or scenes drift out of alignment.
+  journeyRanges, App overlays, and the ETC/ATP scenes' presence/charge) — keep them
+  in sync or scenes drift out of alignment. This is getting unwieldy; a future
+  refactor to absolute page-based positions would help.
 - **Known-rough / deferred polish:** the interior 3D (cristae, inner membrane,
   matrix, ETC stations) is placeholder-quality; spiral/matrix framing tuned per
   owner feedback but still want real polish. Deferred: true bloom, higher-fidelity
   geometry. Project text rule: no em dashes in on-screen UI strings.
-- **Not built yet (later, verified phases):** Scene 6 (ATP synthase, the visual
-  climax) + Gate 2, Scene 7 (zoom to body), Scene 8 (bigger story) + Gate 3, the
-  settled/frontier threshold, Scene 9 (frontier), Scene 10 (closing), progress
-  bar, audio, mobile optimizations.
+- **Not built yet (later, verified phases):** Quiz Gate 2 (after Scene 6), Scene 7
+  (zoom to body), Scene 8 (bigger story) + Gate 3, the settled/frontier threshold,
+  Scene 9 (frontier), Scene 10 (closing), progress bar, audio, mobile
+  optimizations, real bloom post-processing.
 
 ## Colour grammar (JOURNEY.md section 4)
 
