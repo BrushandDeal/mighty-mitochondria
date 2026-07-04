@@ -1,10 +1,12 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { ScrollControls, useScroll } from '@react-three/drei'
 import { CameraRig } from './CameraRig.jsx'
 import { MitochondrionScene } from './scenes/MitochondrionScene.jsx'
 import { OuterMembraneScene } from './scenes/OuterMembraneScene.jsx'
 import { InnerMembraneScene } from './scenes/InnerMembraneScene.jsx'
+import { MatrixScene } from './scenes/MatrixScene.jsx'
+import { GATE1_OFFSET } from './journeyRanges.js'
 
 /*
  * App — the whole site's stage.
@@ -12,10 +14,10 @@ import { InnerMembraneScene } from './scenes/InnerMembraneScene.jsx'
  * <Canvas> is the 3D drawing surface that fills the browser window. Everything
  * inside it is 3D. The <div> text overlays sit on top in plain HTML.
  *
- * <ScrollControls pages={8}> makes the page eight screens tall so there is room
- * to scroll through the overview, down onto the membrane, and inside to the
- * cristae; CameraRig reads that scroll and moves the camera along its waypoints
- * (see CameraRig.jsx).
+ * <ScrollControls pages={12}> makes the page twelve screens tall so there is room
+ * for the whole journey so far: overview -> membrane -> inside to the cristae ->
+ * Quiz Gate 1 -> the spiral dive into the matrix. CameraRig reads that scroll and
+ * moves the camera (see CameraRig.jsx).
  *
  * To add the next JOURNEY.md scene, create a component in /scenes, drop it in
  * beside the others, add a camera waypoint, and lengthen `pages` if needed.
@@ -26,30 +28,66 @@ const SPACE = '#05060a' // the dark "cytoplasm" background
 const clamp01 = (v) => Math.min(1, Math.max(0, v))
 
 /*
+ * GateLock — blocks forward scroll at Quiz Gate 1 until it is answered.
+ *
+ * While locked, if the scroll goes past the gate line it is gently pinned back,
+ * so you can still scroll UP to re-examine the folds (as the hint suggests) but
+ * cannot pass DOWN until you answer correctly.
+ */
+function GateLock({ passed }) {
+  const scroll = useScroll()
+  useFrame(() => {
+    if (passed) return
+    const el = scroll.el
+    if (!el) return
+    const maxScroll = el.scrollHeight - el.clientHeight
+    if (maxScroll <= 0) return
+    const gateScroll = GATE1_OFFSET * maxScroll
+    if (el.scrollTop > gateScroll) el.scrollTop = gateScroll
+  })
+  return null
+}
+
+/*
  * OverlayController — fades the HTML text blocks based on scroll position.
  *
  * It runs inside the Canvas (so it can read scroll) but reaches back out to the
  * overlay <div>s through refs and sets their opacity directly each frame. Doing
  * it this way avoids re-rendering React on every frame, which keeps it smooth.
  */
-function OverlayController({ titleRef, scene2Ref, scene3Ref }) {
+function OverlayController({ titleRef, scene2Ref, scene3Ref, scene4Ref, gateRef, gatePassed }) {
   const scroll = useScroll()
   useFrame(() => {
-    const offset = scroll.offset
-    // Scene 0 title: fully visible at the top, gone by 15% down.
+    const o = scroll.offset
+    // Scene 0 title: fully visible at the top, gone by 10% down.
     if (titleRef.current) {
-      titleRef.current.style.opacity = String(1 - clamp01(offset / 0.15))
+      titleRef.current.style.opacity = String(1 - clamp01(o / 0.1))
     }
-    // Scene 2 copy: fades in at the membrane (40-50%), then back out as we slip
-    // inside (60-70%) so it does not linger in the interior.
+    // Scene 2 copy: fades in at the membrane, back out as we slip inside.
     if (scene2Ref.current) {
-      const inAmount = clamp01((offset - 0.4) / 0.1)
-      const outAmount = 1 - clamp01((offset - 0.6) / 0.1)
+      const inAmount = clamp01((o - 0.27) / 0.05)
+      const outAmount = 1 - clamp01((o - 0.375) / 0.05)
       scene2Ref.current.style.opacity = String(inAmount * outAmount)
     }
-    // Scene 3 copy: fades in during the fold reveal (82-92%).
+    // Scene 3 copy: fades in during the fold sweep, out as we reach the gate.
     if (scene3Ref.current) {
-      scene3Ref.current.style.opacity = String(clamp01((offset - 0.82) / 0.1))
+      const inAmount = clamp01((o - 0.5) / 0.05)
+      const outAmount = 1 - clamp01((o - 0.575) / 0.04)
+      scene3Ref.current.style.opacity = String(inAmount * outAmount)
+    }
+    // Quiz card: the question shows once we reach the gate. After it is passed,
+    // the card briefly becomes a "Correct — dive in" note, then fades as we
+    // spiral away. Pointer-events are only on while the question is up, so the
+    // card never blocks scrolling once answered (and hidden buttons can't click).
+    if (gateRef.current) {
+      const nearGate = o > 0.575
+      const show = gatePassed ? (nearGate && o < 0.7 ? 1 : 0) : nearGate ? 1 : 0
+      gateRef.current.style.opacity = String(show)
+      gateRef.current.style.pointerEvents = show && !gatePassed ? 'auto' : 'none'
+    }
+    // Scene 4 copy: fades in once we have settled into the matrix.
+    if (scene4Ref.current) {
+      scene4Ref.current.style.opacity = String(clamp01((o - 0.86) / 0.06))
     }
   })
   return null
@@ -69,10 +107,51 @@ const overlayBase = {
   pointerEvents: 'none',
 }
 
+const copyStyle = {
+  margin: 0,
+  maxWidth: 580,
+  fontSize: 'clamp(16px, 2.4vw, 22px)',
+  lineHeight: 1.5,
+}
+
+// The four quiz options. Only B is correct; text traces to RESEARCH.md.
+const GATE1_OPTIONS = [
+  { key: 'A', label: "To store the cell's DNA", correct: false },
+  { key: 'B', label: 'To pack in more surface area for making energy', correct: true },
+  { key: 'C', label: 'To let large molecules pass through easily', correct: false },
+  { key: 'D', label: 'To give the mitochondrion its shape', correct: false },
+]
+
+const answerButtonStyle = {
+  font: 'inherit',
+  fontSize: 'clamp(14px, 2vw, 16px)',
+  color: '#e8ecf4',
+  background: 'rgba(64, 207, 224, 0.08)',
+  border: '1px solid rgba(64, 207, 224, 0.4)',
+  borderRadius: 10,
+  padding: '12px 16px',
+  cursor: 'pointer',
+  textAlign: 'left',
+}
+
 export default function App() {
   const titleRef = useRef(null)
   const scene2Ref = useRef(null)
   const scene3Ref = useRef(null)
+  const scene4Ref = useRef(null)
+  const gateRef = useRef(null)
+
+  const [gate1Passed, setGate1Passed] = useState(false)
+  const [gate1Wrong, setGate1Wrong] = useState(false)
+
+  const handleAnswer = (correct) => {
+    if (correct) {
+      setGate1Passed(true)
+      setGate1Wrong(false)
+    } else {
+      setGate1Wrong(true)
+    }
+  }
 
   return (
     <div style={{ position: 'fixed', inset: 0 }}>
@@ -88,15 +167,20 @@ export default function App() {
         <ambientLight intensity={0.2} />
         <directionalLight position={[5, 5, 5]} intensity={0.5} color="#8fbfff" />
 
-        <ScrollControls pages={8} damping={0.3}>
+        <ScrollControls pages={12} damping={0.3}>
           <CameraRig />
           <MitochondrionScene />
           <OuterMembraneScene />
           <InnerMembraneScene />
+          <MatrixScene />
+          <GateLock passed={gate1Passed} />
           <OverlayController
             titleRef={titleRef}
             scene2Ref={scene2Ref}
             scene3Ref={scene3Ref}
+            scene4Ref={scene4Ref}
+            gateRef={gateRef}
+            gatePassed={gate1Passed}
           />
         </ScrollControls>
       </Canvas>
@@ -122,29 +206,113 @@ export default function App() {
         </p>
       </div>
 
-      {/* Scene 2 copy overlay (JOURNEY.md Scene 2, verbatim). Fades in at the
-          membrane. This is the only claim shown here, and it traces to
-          RESEARCH.md (outer membrane is permeable to small molecules via porins). */}
+      {/* Scene 2 copy (JOURNEY.md Scene 2, verbatim). Traces to RESEARCH.md:
+          outer membrane is permeable to small molecules via porins. */}
       <div ref={scene2Ref} style={{ ...overlayBase, opacity: 0 }}>
-        <p style={{ margin: 0, maxWidth: 560, fontSize: 'clamp(16px, 2.4vw, 22px)', lineHeight: 1.5 }}>
+        <p style={copyStyle}>
           First, the outer wall. It&rsquo;s a border, but a relaxed one, studded
           with pores that let small molecules drift in and out freely. Think
           checkpoint, not fortress.
         </p>
       </div>
 
-      {/* Scene 3 copy overlay (JOURNEY.md Scene 3, verbatim). Fades in during the
-          fold reveal. The only claims here are: the inner membrane is folded into
-          cristae, which increase surface area; and it is sealed — both in
-          RESEARCH.md Part A. */}
+      {/* Scene 3 copy (JOURNEY.md Scene 3, verbatim). Traces to RESEARCH.md:
+          inner membrane is folded into cristae (surface area) and is sealed. */}
       <div ref={scene3Ref} style={{ ...overlayBase, opacity: 0 }}>
-        <p style={{ margin: 0, maxWidth: 560, fontSize: 'clamp(16px, 2.4vw, 22px)', lineHeight: 1.5 }}>
+        <p style={copyStyle}>
           Slip inside and everything changes. The inner membrane is packed into
           deep folds called cristae. The trick is surface area: more folds mean
           more room for the machinery that makes energy. And unlike the outer
           wall, this one is sealed tight. Remember that seal. It&rsquo;s the whole
           reason the next part works.
         </p>
+      </div>
+
+      {/* Scene 4 copy (JOURNEY.md Scene 4, verbatim). Traces to RESEARCH.md:
+          own circular DNA separate from the cell; matrix runs the citric acid
+          cycle; an earlier step (glycolysis) already happened outside. */}
+      <div ref={scene4Ref} style={{ ...overlayBase, opacity: 0 }}>
+        <p style={copyStyle}>
+          This inner space is the matrix, and it hides a secret: the mitochondrion
+          has its own DNA, separate from the rest of the cell. A clue we&rsquo;ll
+          come back to. An earlier step of energy extraction already happened out
+          in the cell, before anything reached here. What happens inside the
+          mitochondrion is the next stage: a loop of chemistry called the citric
+          acid cycle breaks the fuel down further and loads up tiny
+          &ldquo;electron carriers&rdquo; for the main event.
+        </p>
+      </div>
+
+      {/* Quiz Gate 1 (JOURNEY.md). Blocks forward scroll until answered. The
+          outer wrapper ignores the mouse so scrolling passes through; the inner
+          card's pointer-events are toggled with its visibility by
+          OverlayController. */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 24,
+          pointerEvents: 'none',
+        }}
+      >
+        <div
+          ref={gateRef}
+          style={{
+            opacity: 0,
+            pointerEvents: 'none',
+            width: '100%',
+            maxWidth: 540,
+            background: 'rgba(6, 12, 20, 0.8)',
+            border: '1px solid rgba(64, 207, 224, 0.35)',
+            borderRadius: 16,
+            padding: '26px 24px',
+            textAlign: 'center',
+          }}
+        >
+          <p
+            style={{
+              margin: 0,
+              fontSize: 12,
+              letterSpacing: '0.14em',
+              textTransform: 'uppercase',
+              color: '#40cfe0',
+              opacity: 0.9,
+            }}
+          >
+            Quiz Gate 1
+          </p>
+          {gate1Passed ? (
+            <p style={{ margin: '14px 0 0', fontSize: 'clamp(15px, 2.2vw, 18px)', color: '#cfe9ef' }}>
+              Correct — keep scrolling to dive in.
+            </p>
+          ) : (
+            <>
+              <p style={{ margin: '12px 0 0', fontSize: 'clamp(16px, 2.4vw, 20px)', lineHeight: 1.45 }}>
+                Why is the inner membrane folded into cristae?
+              </p>
+              <div style={{ display: 'grid', gap: 10, marginTop: 20 }}>
+                {GATE1_OPTIONS.map((o) => (
+                  <button
+                    key={o.key}
+                    type="button"
+                    onClick={() => handleAnswer(o.correct)}
+                    style={answerButtonStyle}
+                  >
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+              {gate1Wrong && (
+                <p style={{ margin: '16px 0 0', fontSize: 14, color: '#cfe9ef', fontStyle: 'italic' }}>
+                  Not quite, scroll back up and look at those folds again.
+                </p>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </div>
   )

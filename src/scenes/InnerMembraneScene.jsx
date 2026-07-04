@@ -3,7 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import { useScroll } from '@react-three/drei'
 import { MeshStandardMaterial } from 'three'
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion.js'
-import { ROTATION_SPEED, interiorFactor } from '../journeyRanges.js'
+import { ROTATION_SPEED, interiorFactor, matrixFactor } from '../journeyRanges.js'
 
 /*
  * InnerMembraneScene — JOURNEY.md Scene 3, "inner membrane & cristae (the folds)".
@@ -91,6 +91,10 @@ export function InnerMembraneScene() {
       const t = _state.clock.elapsedTime
       cristaeMat.emissiveIntensity = 0.5 + 0.15 * Math.sin(t * 1.2)
     }
+
+    // Dim the folds to a backdrop once we dive into the matrix, so the matrix
+    // contents read clearly. They stay faintly visible, framing the space.
+    cristaeMat.opacity = 0.75 * (1 - 0.55 * matrixFactor(scroll.offset))
   })
 
   return (

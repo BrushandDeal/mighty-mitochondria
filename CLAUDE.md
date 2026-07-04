@@ -77,19 +77,27 @@ current code already honours the OS `prefers-reduced-motion` setting via
   and out through them (never gold; only the outer membrane; small molecules
   only). The camera uses a **waypoint pattern** in `CameraRig.jsx` (camera poses
   pinned to scroll positions, blended smoothly) — add a waypoint per new scene.
-- **Scene 3 (inner membrane & cristae / the folds) — visuals + camera done; Quiz
-  Gate 1 NOT built yet.** `scenes/InnerMembraneScene.jsx` = sealed translucent
-  cyan inner membrane + stacked cristae folds + cool (never gold) shimmer.
+- **Scene 3 (inner membrane & cristae / the folds) — done.** `scenes/InnerMembraneScene.jsx`
+  = sealed translucent cyan inner membrane + stacked cristae folds + cool shimmer.
   Replaced the old gold placeholder core (removed from `MitochondrionScene.jsx`).
-  The outer membrane + pores now **fade out** as the camera passes inside and
-  fade back on scroll-up; `journeyRanges.js` holds the shared pass-through window
-  (`interiorFactor`) and `ROTATION_SPEED`. `ScrollControls pages` is 8.
-- **Known-rough / deferred polish:** the interior 3D (cristae, inner membrane) is
-  placeholder-quality geometry the owner wants to improve later — not final art.
-  Also still deferred: true bloom post-processing, higher-fidelity cristae.
-- **Not built yet (later, verified phases):** Quiz Gate 1 (after Scene 3), the
-  remaining JOURNEY.md scenes (4 matrix onward), the other quiz gates, the
-  settled/frontier threshold, progress bar, audio, mobile optimizations.
+  Outer membrane + pores **fade out** as the camera passes inside (and back on
+  scroll-up); `journeyRanges.js` holds the shared windows (`interiorFactor`,
+  `matrixFactor`, `GATE1_OFFSET`, `ROTATION_SPEED`).
+- **Quiz Gate 1 — done.** `App.jsx` `GateLock` clamps forward scroll at
+  `GATE1_OFFSET` until the visitor clicks the correct answer (B). Wrong answers
+  show the JOURNEY hint; correct answer unlocks and plays the spiral dive. The
+  quiz card is an HTML overlay; its pointer-events follow visibility.
+- **Scene 4 (the matrix / engine room) — done.** `scenes/MatrixScene.jsx` = a
+  cool glowing circular mtDNA loop + drifting enzyme/ribosome specks + a MUTED
+  warm haze (deliberately not vivid gold, to protect the ATP-synthase payoff).
+  Reached via the spiral dive in `CameraRig.jsx`. `ScrollControls pages` is 12.
+- **Known-rough / deferred polish:** the interior 3D (cristae, inner membrane,
+  matrix) is placeholder-quality; the spiral dive and matrix framing were tuned
+  down (fewer turns, dimmer, camera pulled back) per owner feedback but still want
+  real polish. Also deferred: true bloom post-processing, higher-fidelity geometry.
+- **Not built yet (later, verified phases):** Scene 5 (electron transport chain),
+  Scene 6 (ATP synthase) + Gate 2, Scenes 7-10, Gate 3, the settled/frontier
+  threshold, progress bar, audio, mobile optimizations.
 
 ## Colour grammar (JOURNEY.md section 4)
 
