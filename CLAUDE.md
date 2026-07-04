@@ -75,13 +75,21 @@ current code already honours the OS `prefers-reduced-motion` setting via
 - **Scene 2 (outer membrane / the gateway) — done.** `scenes/OuterMembraneScene.jsx`
   studs the surface with cyan porins and small cyan/white molecules drifting in
   and out through them (never gold; only the outer membrane; small molecules
-  only). The camera now uses a **waypoint pattern** in `CameraRig.jsx` (a list of
-  camera poses pinned to scroll positions, blended smoothly) — add a waypoint per
-  new scene. `App.jsx` fades the Scene 0 title out and the Scene 2 copy in by
-  scroll position; `ScrollControls pages` is 5.
-- **Not built yet (later, verified phases):** the remaining JOURNEY.md scenes
-  (3 cristae onward), quiz gates, the settled/frontier threshold, progress bar,
-  audio, mobile optimizations, true bloom post-processing, real cristae geometry.
+  only). The camera uses a **waypoint pattern** in `CameraRig.jsx` (camera poses
+  pinned to scroll positions, blended smoothly) — add a waypoint per new scene.
+- **Scene 3 (inner membrane & cristae / the folds) — visuals + camera done; Quiz
+  Gate 1 NOT built yet.** `scenes/InnerMembraneScene.jsx` = sealed translucent
+  cyan inner membrane + stacked cristae folds + cool (never gold) shimmer.
+  Replaced the old gold placeholder core (removed from `MitochondrionScene.jsx`).
+  The outer membrane + pores now **fade out** as the camera passes inside and
+  fade back on scroll-up; `journeyRanges.js` holds the shared pass-through window
+  (`interiorFactor`) and `ROTATION_SPEED`. `ScrollControls pages` is 8.
+- **Known-rough / deferred polish:** the interior 3D (cristae, inner membrane) is
+  placeholder-quality geometry the owner wants to improve later — not final art.
+  Also still deferred: true bloom post-processing, higher-fidelity cristae.
+- **Not built yet (later, verified phases):** Quiz Gate 1 (after Scene 3), the
+  remaining JOURNEY.md scenes (4 matrix onward), the other quiz gates, the
+  settled/frontier threshold, progress bar, audio, mobile optimizations.
 
 ## Colour grammar (JOURNEY.md section 4)
 

@@ -25,12 +25,21 @@ const WAYPOINTS = [
   // Scene 0 / 1 — far overview, drifting in.
   { at: 0.0, pos: [0, 0.5, 7.0], lookAt: [0, 0, 0] },
   // Scene 1 — medium approach (smooth dolly-in from far to medium).
-  { at: 0.45, pos: [1.2, 0.6, 4.8], lookAt: [0, 0, 0] },
+  { at: 0.28, pos: [1.2, 0.6, 4.8], lookAt: [0, 0, 0] },
   // Scene 2 — closing on the outer membrane surface.
-  { at: 0.75, pos: [0.4, 0.25, 3.0], lookAt: [0, 0, 0.6] },
+  { at: 0.47, pos: [0.4, 0.25, 3.0], lookAt: [0, 0, 0.6] },
   // Scene 2 — right at the membrane; the small sideways shift of the camera
   // (x: 0.4 -> 0.85) while looking at the surface creates gentle parallax.
-  { at: 1.0, pos: [0.85, 0.15, 2.4], lookAt: [0.25, 0, 1.0] },
+  { at: 0.6, pos: [0.85, 0.15, 2.4], lookAt: [0.25, 0, 1.0] },
+  // Scene 3 — slip through the (now fading) outer membrane, near the axis so
+  // there is depth to travel through, into the narrow intermembrane space.
+  { at: 0.7, pos: [0.15, 0.05, 0.92], lookAt: [0, 0, 0] },
+  // Scene 3 — begin the sweep: drop to one end of the fold stack, off to the
+  // near side, looking along the folds.
+  { at: 0.82, pos: [-1.05, 0.08, 1.05], lookAt: [-0.4, 0, 0.15] },
+  // Scene 3 — sweep to the far end past wall after wall of cristae (the sideways
+  // travel reveals the folds one by one).
+  { at: 1.0, pos: [1.05, 0.05, 1.05], lookAt: [0.4, 0, 0.15] },
 ]
 
 // Linear interpolation: blend from `a` to `b` by fraction `t` (0..1).

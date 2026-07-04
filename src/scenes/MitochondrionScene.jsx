@@ -1,37 +1,52 @@
 import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { Sparkles } from '@react-three/drei'
+import { Sparkles, useScroll } from '@react-three/drei'
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion.js'
+import { ROTATION_SPEED, interiorFactor } from '../journeyRanges.js'
 
 /*
- * MitochondrionScene — the Phase 1 placeholder.
+ * MitochondrionScene — the bean-shaped outer body (JOURNEY.md Scenes 0 / 1).
  *
- * A semi-translucent, bean-shaped mitochondrion that slowly rotates, with a
- * warm golden glow, floating in dark space. This stands in for JOURNEY.md's
- * Scene 0 / Scene 1 ("a bean-shaped mitochondrion, semi-translucent so the
- * inner folds glow faintly through the surface").
+ * A semi-translucent, bean-shaped mitochondrion that slowly rotates, with a warm
+ * golden glow, floating in dark space.
  *
- * It is written as ONE self-contained component on purpose. Later scenes from
- * JOURNEY.md (outer membrane, cristae, matrix, ATP synthase, ...) become their
- * own sibling files in this /scenes folder and get dropped into App.jsx the
- * same way, without rearchitecting.
+ * As the camera slips inside for Scene 3, this whole outer body FADES OUT (shell,
+ * halo, and its warm interior light) and its spin eases to a stop, so it does not
+ * block or clip the interior reveal. Scroll back up and it fades in again. That
+ * fade is driven by `interiorFactor` from journeyRanges.js.
  *
- * The gold is the site's reserved "energy" colour (see JOURNEY.md section 4).
+ * The gold is the site's reserved "energy" colour (JOURNEY.md section 4). Note:
+ * the old gold placeholder "inner core" was removed here — the real inner
+ * membrane and cristae now live in InnerMembraneScene.jsx.
  */
 
 const GOLD = '#ffcf70'
 
+const SHELL_OPACITY = 0.55
+const HALO_OPACITY = 0.08
+const LIGHT_INTENSITY = 6
+
 export function MitochondrionScene() {
   const group = useRef()
+  const shellMat = useRef()
+  const haloMat = useRef()
+  const light = useRef()
+  const scroll = useScroll()
   const prefersReducedMotion = usePrefersReducedMotion()
 
-  // Turn the whole organelle slowly, once per frame. `delta` is the number of
-  // seconds since the last frame, so the speed is the same on fast and slow
-  // screens. If the visitor asked for reduced motion, we simply don't rotate.
   useFrame((_state, delta) => {
-    if (prefersReducedMotion) return
-    if (group.current) {
-      group.current.rotation.y += delta * 0.15
+    // `vis` is 1 while outside the organelle and drops to 0 as we go inside.
+    const vis = 1 - interiorFactor(scroll.offset)
+
+    // Fade the whole outer body by its scroll-driven visibility.
+    if (shellMat.current) shellMat.current.opacity = SHELL_OPACITY * vis
+    if (haloMat.current) haloMat.current.opacity = HALO_OPACITY * vis
+    if (light.current) light.current.intensity = LIGHT_INTENSITY * vis
+
+    // Turn slowly, easing the spin to a stop as the body fades (so the interior
+    // is steady for Scene 3's fold sweep). Frozen entirely under reduced motion.
+    if (!prefersReducedMotion && group.current) {
+      group.current.rotation.y += delta * ROTATION_SPEED * vis
     }
   })
 
@@ -39,32 +54,18 @@ export function MitochondrionScene() {
     <group ref={group}>
       {/* The translucent outer body. A sphere squashed along two axes reads as
           a bean-shaped ellipsoid. `transparent` + a low `opacity` let the inner
-          glow show through, like the folds glowing through the surface. */}
+          membrane show faintly through, and let it fade out on entry. */}
       <mesh scale={[1.7, 1, 1]}>
         <sphereGeometry args={[1, 64, 64]} />
         <meshStandardMaterial
+          ref={shellMat}
           color={GOLD}
           emissive={GOLD}
           emissiveIntensity={0.35}
           transparent
-          opacity={0.55}
+          opacity={SHELL_OPACITY}
           roughness={0.35}
           metalness={0.1}
-        />
-      </mesh>
-
-      {/* A smaller, brighter inner core. Seen through the translucent shell it
-          gives the "inner glow" hint. This is a placeholder for the real folded
-          cristae that a later phase will model. */}
-      <mesh scale={[1.4, 0.7, 0.7]}>
-        <sphereGeometry args={[1, 48, 48]} />
-        <meshStandardMaterial
-          color={GOLD}
-          emissive={GOLD}
-          emissiveIntensity={1.4}
-          transparent
-          opacity={0.45}
-          roughness={0.5}
         />
       </mesh>
 
@@ -74,9 +75,10 @@ export function MitochondrionScene() {
       <mesh scale={[3.2, 2.4, 2.4]}>
         <sphereGeometry args={[1, 32, 32]} />
         <meshBasicMaterial
+          ref={haloMat}
           color={GOLD}
           transparent
-          opacity={0.08}
+          opacity={HALO_OPACITY}
           side={2 /* THREE.BackSide */}
           blending={2 /* THREE.AdditiveBlending */}
           depthWrite={false}
@@ -84,8 +86,8 @@ export function MitochondrionScene() {
       </mesh>
 
       {/* A warm light living inside the organelle, so the shell is lit from
-          within rather than looking flat. */}
-      <pointLight color={GOLD} intensity={6} distance={12} decay={2} />
+          within rather than looking flat. Fades out on entry. */}
+      <pointLight ref={light} color={GOLD} intensity={LIGHT_INTENSITY} distance={12} decay={2} />
 
       {/* Floating dust drifting around the organelle (JOURNEY.md Scene 0's
           "floating dust particles"). drei's Sparkles is the standard, cheap way

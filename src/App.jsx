@@ -4,6 +4,7 @@ import { ScrollControls, useScroll } from '@react-three/drei'
 import { CameraRig } from './CameraRig.jsx'
 import { MitochondrionScene } from './scenes/MitochondrionScene.jsx'
 import { OuterMembraneScene } from './scenes/OuterMembraneScene.jsx'
+import { InnerMembraneScene } from './scenes/InnerMembraneScene.jsx'
 
 /*
  * App — the whole site's stage.
@@ -11,9 +12,10 @@ import { OuterMembraneScene } from './scenes/OuterMembraneScene.jsx'
  * <Canvas> is the 3D drawing surface that fills the browser window. Everything
  * inside it is 3D. The <div> text overlays sit on top in plain HTML.
  *
- * <ScrollControls pages={5}> makes the page five screens tall so there is room
- * to scroll through the overview and down onto the membrane; CameraRig reads
- * that scroll and moves the camera along its waypoints (see CameraRig.jsx).
+ * <ScrollControls pages={8}> makes the page eight screens tall so there is room
+ * to scroll through the overview, down onto the membrane, and inside to the
+ * cristae; CameraRig reads that scroll and moves the camera along its waypoints
+ * (see CameraRig.jsx).
  *
  * To add the next JOURNEY.md scene, create a component in /scenes, drop it in
  * beside the others, add a camera waypoint, and lengthen `pages` if needed.
@@ -30,17 +32,24 @@ const clamp01 = (v) => Math.min(1, Math.max(0, v))
  * overlay <div>s through refs and sets their opacity directly each frame. Doing
  * it this way avoids re-rendering React on every frame, which keeps it smooth.
  */
-function OverlayController({ titleRef, scene2Ref }) {
+function OverlayController({ titleRef, scene2Ref, scene3Ref }) {
   const scroll = useScroll()
   useFrame(() => {
     const offset = scroll.offset
-    // Scene 0 title: fully visible at the top, gone by 25% down.
+    // Scene 0 title: fully visible at the top, gone by 15% down.
     if (titleRef.current) {
-      titleRef.current.style.opacity = String(1 - clamp01(offset / 0.25))
+      titleRef.current.style.opacity = String(1 - clamp01(offset / 0.15))
     }
-    // Scene 2 copy: fades in between 60% and 80% (as we reach the membrane).
+    // Scene 2 copy: fades in at the membrane (40-50%), then back out as we slip
+    // inside (60-70%) so it does not linger in the interior.
     if (scene2Ref.current) {
-      scene2Ref.current.style.opacity = String(clamp01((offset - 0.6) / 0.2))
+      const inAmount = clamp01((offset - 0.4) / 0.1)
+      const outAmount = 1 - clamp01((offset - 0.6) / 0.1)
+      scene2Ref.current.style.opacity = String(inAmount * outAmount)
+    }
+    // Scene 3 copy: fades in during the fold reveal (82-92%).
+    if (scene3Ref.current) {
+      scene3Ref.current.style.opacity = String(clamp01((offset - 0.82) / 0.1))
     }
   })
   return null
@@ -63,6 +72,7 @@ const overlayBase = {
 export default function App() {
   const titleRef = useRef(null)
   const scene2Ref = useRef(null)
+  const scene3Ref = useRef(null)
 
   return (
     <div style={{ position: 'fixed', inset: 0 }}>
@@ -78,11 +88,16 @@ export default function App() {
         <ambientLight intensity={0.2} />
         <directionalLight position={[5, 5, 5]} intensity={0.5} color="#8fbfff" />
 
-        <ScrollControls pages={5} damping={0.3}>
+        <ScrollControls pages={8} damping={0.3}>
           <CameraRig />
           <MitochondrionScene />
           <OuterMembraneScene />
-          <OverlayController titleRef={titleRef} scene2Ref={scene2Ref} />
+          <InnerMembraneScene />
+          <OverlayController
+            titleRef={titleRef}
+            scene2Ref={scene2Ref}
+            scene3Ref={scene3Ref}
+          />
         </ScrollControls>
       </Canvas>
 
@@ -115,6 +130,20 @@ export default function App() {
           First, the outer wall. It&rsquo;s a border, but a relaxed one, studded
           with pores that let small molecules drift in and out freely. Think
           checkpoint, not fortress.
+        </p>
+      </div>
+
+      {/* Scene 3 copy overlay (JOURNEY.md Scene 3, verbatim). Fades in during the
+          fold reveal. The only claims here are: the inner membrane is folded into
+          cristae, which increase surface area; and it is sealed — both in
+          RESEARCH.md Part A. */}
+      <div ref={scene3Ref} style={{ ...overlayBase, opacity: 0 }}>
+        <p style={{ margin: 0, maxWidth: 560, fontSize: 'clamp(16px, 2.4vw, 22px)', lineHeight: 1.5 }}>
+          Slip inside and everything changes. The inner membrane is packed into
+          deep folds called cristae. The trick is surface area: more folds mean
+          more room for the machinery that makes energy. And unlike the outer
+          wall, this one is sealed tight. Remember that seal. It&rsquo;s the whole
+          reason the next part works.
         </p>
       </div>
     </div>
