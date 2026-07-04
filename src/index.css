@@ -1,0 +1,36 @@
+/* Global styles for the whole site.
+   The 3D canvas fills the entire browser window, so the page has no
+   scrollbars of its own, no margins, and a dark background behind everything. */
+
+:root {
+  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
+
+  /* Palette from JOURNEY.md section 4:
+     deep blue/teal base, cyan structure, warm gold reserved for energy. */
+  --space: #05060a; /* the dark "cytoplasm" the mitochondrion floats in */
+  --gold: #ffcf70; /* the energy color */
+  --text: #e8ecf4;
+
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+}
+
+body {
+  background: var(--space);
+  color: var(--text);
+  font-family: var(--sans);
+  /* The 3D scroll region manages its own scrolling, so hide the window's. */
+  overflow: hidden;
+}
