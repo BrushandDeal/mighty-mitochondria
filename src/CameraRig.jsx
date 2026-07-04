@@ -1,7 +1,7 @@
 import { useThree, useFrame } from '@react-three/fiber'
 import { useScroll } from '@react-three/drei'
 import { Vector3 } from 'three'
-import { GATE1_OFFSET } from './journeyRanges.js'
+import { GATE1_OFFSET, SPIRAL_END } from './journeyRanges.js'
 
 /*
  * CameraRig — links page scrolling to camera movement.
@@ -10,34 +10,47 @@ import { GATE1_OFFSET } from './journeyRanges.js'
  * `scroll.offset`: a single number from 0 (top of the page) to 1 (bottom).
  *
  * Two mechanisms:
- *  1. WAYPOINTS — up to the gate, a list of camera poses pinned to scroll
- *     positions, smoothly blended ("lerped") between.
- *  2. The SPIRAL DIVE — from Gate 1 (GATE1_OFFSET) to the bottom, the camera
- *     follows a spiral computed directly: it winds inward and then settles into
- *     a slow float through the matrix. This is JOURNEY.md's signature reward.
+ *  1. WAYPOINTS — a list of camera poses pinned to scroll positions, smoothly
+ *     blended ("lerped") between. Used before the gate AND after the spiral
+ *     (for Scene 5).
+ *  2. The SPIRAL DIVE — between the gate (GATE1_OFFSET) and SPIRAL_END, the
+ *     camera follows a spiral computed directly: it winds inward and settles
+ *     into the matrix. This is JOURNEY.md's signature reward.
  *
  * The organelle is centred at the origin. Its outer body is an ellipsoid with
- * half-widths 1.7 x 1 x 1 (front surface near z = 1); the sealed inner membrane
- * is about 1.45 x 0.8 x 0.8.
+ * half-widths 1.7 x 1 x 1 (front near z = 1); the sealed inner membrane is about
+ * 1.45 x 0.8 x 0.8. Scene 5's stations sit on the inner membrane's +z face.
  */
 const WAYPOINTS = [
   // Scene 0 / 1 — far overview, drifting in.
   { at: 0.0, pos: [0, 0.5, 7.0], lookAt: [0, 0, 0] },
   // Scene 1 — medium approach (smooth dolly-in from far to medium).
-  { at: 0.15, pos: [1.2, 0.6, 4.8], lookAt: [0, 0, 0] },
+  { at: 0.12, pos: [1.2, 0.6, 4.8], lookAt: [0, 0, 0] },
   // Scene 2 — closing on the outer membrane surface.
-  { at: 0.26, pos: [0.4, 0.25, 3.0], lookAt: [0, 0, 0.6] },
+  { at: 0.21, pos: [0.4, 0.25, 3.0], lookAt: [0, 0, 0.6] },
   // Scene 2 — right at the membrane; small sideways shift gives gentle parallax.
-  { at: 0.36, pos: [0.85, 0.15, 2.4], lookAt: [0.25, 0, 1.0] },
+  { at: 0.29, pos: [0.85, 0.15, 2.4], lookAt: [0.25, 0, 1.0] },
   // Scene 3 — slip through the (now fading) outer membrane into the gap.
-  { at: 0.44, pos: [0.15, 0.05, 0.92], lookAt: [0, 0, 0] },
+  { at: 0.35, pos: [0.15, 0.05, 0.92], lookAt: [0, 0, 0] },
   // Scene 3 — begin the sweep at one end of the fold stack.
-  { at: 0.52, pos: [-1.05, 0.08, 1.05], lookAt: [-0.4, 0, 0.15] },
+  { at: 0.42, pos: [-1.05, 0.08, 1.05], lookAt: [-0.4, 0, 0.15] },
   // Scene 3 — sweep to the far end past wall after wall of cristae.
-  { at: 0.6, pos: [1.05, 0.05, 1.05], lookAt: [0.4, 0, 0.15] },
-  // Gate 1 hold — the sweep-end pose, aim re-centred so the spiral begins here
-  // seamlessly. Scroll is locked at GATE1_OFFSET until the gate is answered.
+  { at: 0.48, pos: [1.05, 0.05, 1.05], lookAt: [0.4, 0, 0.15] },
+  // Gate 1 hold — sweep-end pose, aim re-centred so the spiral begins seamlessly.
   { at: GATE1_OFFSET, pos: [1.05, 0.05, 1.05], lookAt: [0, 0, 0] },
+
+  // --- Scene 5 (electron transport chain) waypoints, after the spiral ---
+  // Spiral-end pose (matches the spiral's final position exactly for a seamless
+  // hand-off): floating in the matrix.
+  { at: SPIRAL_END, pos: [0.672, 0, 0.672], lookAt: [0, 0, 0] },
+  // Turn from the matrix centre to face the inner-membrane wall (matrix side).
+  { at: 0.85, pos: [0.1, 0.2, 0.15], lookAt: [-0.3, 0, 0.6] },
+  // Establish: at the left end of the station row, looking at the first pumper.
+  { at: 0.9, pos: [-1.05, 0.22, 0.08], lookAt: [-0.6, 0, 0.62] },
+  // Track along the row to the middle pumper.
+  { at: 0.95, pos: [0.1, 0.18, 0.12], lookAt: [0.3, 0, 0.78] },
+  // Track to the far pumper at the end of the row.
+  { at: 1.0, pos: [0.85, 0.16, 0.1], lookAt: [0.95, 0, 0.62] },
 ]
 
 // Linear interpolation and eased helpers.
@@ -67,9 +80,9 @@ export function CameraRig() {
   useFrame((_state, delta) => {
     const offset = scroll.offset // 0 at top, 1 at bottom
 
-    if (offset >= GATE1_OFFSET) {
+    if (offset >= GATE1_OFFSET && offset <= SPIRAL_END) {
       // --- Spiral dive into the matrix ---
-      const u = clamp01((offset - GATE1_OFFSET) / (1 - GATE1_OFFSET))
+      const u = clamp01((offset - GATE1_OFFSET) / (SPIRAL_END - GATE1_OFFSET))
       // Ease the angle too, so the turn accelerates in and decelerates to a rest
       // rather than sweeping at a constant, mechanical rate.
       const angle = SPIRAL_START_ANGLE + smootherstep(u) * SPIRAL_TURNS * Math.PI * 2
@@ -79,7 +92,7 @@ export function CameraRig() {
       posTarget.set(Math.sin(angle) * radius, y, Math.cos(angle) * radius)
       lookTarget.set(0, 0, 0)
     } else {
-      // --- Waypoint rail up to the gate ---
+      // --- Waypoint rail (before the gate, and again for Scene 5) ---
       let a = WAYPOINTS[0]
       let b = WAYPOINTS[WAYPOINTS.length - 1]
       for (let i = 0; i < WAYPOINTS.length - 1; i++) {

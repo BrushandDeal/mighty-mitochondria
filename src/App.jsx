@@ -6,6 +6,7 @@ import { MitochondrionScene } from './scenes/MitochondrionScene.jsx'
 import { OuterMembraneScene } from './scenes/OuterMembraneScene.jsx'
 import { InnerMembraneScene } from './scenes/InnerMembraneScene.jsx'
 import { MatrixScene } from './scenes/MatrixScene.jsx'
+import { ElectronTransportChainScene } from './scenes/ElectronTransportChainScene.jsx'
 import { GATE1_OFFSET } from './journeyRanges.js'
 
 /*
@@ -14,10 +15,10 @@ import { GATE1_OFFSET } from './journeyRanges.js'
  * <Canvas> is the 3D drawing surface that fills the browser window. Everything
  * inside it is 3D. The <div> text overlays sit on top in plain HTML.
  *
- * <ScrollControls pages={12}> makes the page twelve screens tall so there is room
- * for the whole journey so far: overview -> membrane -> inside to the cristae ->
- * Quiz Gate 1 -> the spiral dive into the matrix. CameraRig reads that scroll and
- * moves the camera (see CameraRig.jsx).
+ * <ScrollControls pages={15}> makes the page fifteen screens tall so there is
+ * room for the whole journey so far: overview -> membrane -> inside to the
+ * cristae -> Quiz Gate 1 -> the spiral dive into the matrix -> the electron
+ * transport chain. CameraRig reads that scroll and moves the camera.
  *
  * To add the next JOURNEY.md scene, create a component in /scenes, drop it in
  * beside the others, add a camera waypoint, and lengthen `pages` if needed.
@@ -55,39 +56,62 @@ function GateLock({ passed }) {
  * overlay <div>s through refs and sets their opacity directly each frame. Doing
  * it this way avoids re-rendering React on every frame, which keeps it smooth.
  */
-function OverlayController({ titleRef, scene2Ref, scene3Ref, scene4Ref, gateRef, gatePassed }) {
+function OverlayController({
+  titleRef,
+  scene2Ref,
+  scene3Ref,
+  scene4Ref,
+  scene5Ref,
+  gateRef,
+  gatePassed,
+  meterRef,
+  meterFillRef,
+}) {
   const scroll = useScroll()
   useFrame(() => {
     const o = scroll.offset
-    // Scene 0 title: fully visible at the top, gone by 10% down.
+    // Scene 0 title: fully visible at the top, gone by 7% down.
     if (titleRef.current) {
-      titleRef.current.style.opacity = String(1 - clamp01(o / 0.1))
+      titleRef.current.style.opacity = String(1 - clamp01(o / 0.07))
     }
     // Scene 2 copy: fades in at the membrane, back out as we slip inside.
     if (scene2Ref.current) {
-      const inAmount = clamp01((o - 0.27) / 0.05)
-      const outAmount = 1 - clamp01((o - 0.375) / 0.05)
+      const inAmount = clamp01((o - 0.22) / 0.04)
+      const outAmount = 1 - clamp01((o - 0.3) / 0.04)
       scene2Ref.current.style.opacity = String(inAmount * outAmount)
     }
     // Scene 3 copy: fades in during the fold sweep, out as we reach the gate.
     if (scene3Ref.current) {
-      const inAmount = clamp01((o - 0.5) / 0.05)
-      const outAmount = 1 - clamp01((o - 0.575) / 0.04)
+      const inAmount = clamp01((o - 0.4) / 0.04)
+      const outAmount = 1 - clamp01((o - 0.46) / 0.03)
       scene3Ref.current.style.opacity = String(inAmount * outAmount)
     }
     // Quiz card: the question shows once we reach the gate. After it is passed,
-    // the card briefly becomes a "Correct — dive in" note, then fades as we
-    // spiral away. Pointer-events are only on while the question is up, so the
-    // card never blocks scrolling once answered (and hidden buttons can't click).
+    // the card briefly becomes a "Correct" note, then fades as we spiral away.
+    // Pointer-events are only on while the question is up, so the card never
+    // blocks scrolling once answered (and hidden buttons can't click).
     if (gateRef.current) {
-      const nearGate = o > 0.575
-      const show = gatePassed ? (nearGate && o < 0.7 ? 1 : 0) : nearGate ? 1 : 0
+      const nearGate = o > 0.46
+      const show = gatePassed ? (nearGate && o < 0.58 ? 1 : 0) : nearGate ? 1 : 0
       gateRef.current.style.opacity = String(show)
       gateRef.current.style.pointerEvents = show && !gatePassed ? 'auto' : 'none'
     }
-    // Scene 4 copy: fades in once we have settled into the matrix.
+    // Scene 4 copy: fades in during the matrix float, out before Scene 5.
     if (scene4Ref.current) {
-      scene4Ref.current.style.opacity = String(clamp01((o - 0.86) / 0.06))
+      const inAmount = clamp01((o - 0.73) / 0.03)
+      const outAmount = 1 - clamp01((o - 0.78) / 0.03)
+      scene4Ref.current.style.opacity = String(inAmount * outAmount)
+    }
+    // Scene 5 copy: fades in as we track along the stations.
+    if (scene5Ref.current) {
+      scene5Ref.current.style.opacity = String(clamp01((o - 0.88) / 0.04))
+    }
+    // Charge meter: fades in with Scene 5; its fill climbs as charge builds.
+    if (meterRef.current) {
+      meterRef.current.style.opacity = String(clamp01((o - 0.81) / 0.04))
+    }
+    if (meterFillRef.current) {
+      meterFillRef.current.style.height = `${clamp01((o - 0.84) / 0.14) * 100}%`
     }
   })
   return null
@@ -139,7 +163,10 @@ export default function App() {
   const scene2Ref = useRef(null)
   const scene3Ref = useRef(null)
   const scene4Ref = useRef(null)
+  const scene5Ref = useRef(null)
   const gateRef = useRef(null)
+  const meterRef = useRef(null)
+  const meterFillRef = useRef(null)
 
   const [gate1Passed, setGate1Passed] = useState(false)
   const [gate1Wrong, setGate1Wrong] = useState(false)
@@ -167,20 +194,24 @@ export default function App() {
         <ambientLight intensity={0.2} />
         <directionalLight position={[5, 5, 5]} intensity={0.5} color="#8fbfff" />
 
-        <ScrollControls pages={12} damping={0.3}>
+        <ScrollControls pages={15} damping={0.3}>
           <CameraRig />
           <MitochondrionScene />
           <OuterMembraneScene />
           <InnerMembraneScene />
           <MatrixScene />
+          <ElectronTransportChainScene />
           <GateLock passed={gate1Passed} />
           <OverlayController
             titleRef={titleRef}
             scene2Ref={scene2Ref}
             scene3Ref={scene3Ref}
             scene4Ref={scene4Ref}
+            scene5Ref={scene5Ref}
             gateRef={gateRef}
             gatePassed={gate1Passed}
+            meterRef={meterRef}
+            meterFillRef={meterFillRef}
           />
         </ScrollControls>
       </Canvas>
@@ -243,6 +274,71 @@ export default function App() {
         </p>
       </div>
 
+      {/* Scene 5 copy, PART ONE (JOURNEY.md Scene 5, verbatim first portion).
+          Traces to RESEARCH.md Part A: the chain pumps protons from the matrix
+          into the intermembrane space; the gradient is a real voltage, not just
+          a pile-up; the sealed membrane behaves like a charged battery. */}
+      <div ref={scene5Ref} style={{ ...overlayBase, opacity: 0 }}>
+        <p style={copyStyle}>
+          Now the main event. Those electron carriers dump their cargo into a
+          chain of protein stations. As electrons hop down the chain, most
+          stations use the energy to shove protons across the sealed membrane,
+          one side filling up while the other empties. But here&rsquo;s the catch
+          that trips people: protons aren&rsquo;t water. Each one is a naked
+          positive charge. So you&rsquo;re not just piling stuff up, you&rsquo;re
+          peeling positive away from negative and building a voltage. The sealed
+          membrane is charging like a battery.
+        </p>
+      </div>
+
+      {/* Charge meter: a qualitative bar that climbs as the gradient builds.
+          NO numbers on it (the millivolt figures are marked TO SOURCE and stay
+          off the site). Violet to match the pumped protons. */}
+      <div
+        ref={meterRef}
+        style={{
+          position: 'absolute',
+          right: 'clamp(16px, 4vw, 48px)',
+          top: '50%',
+          transform: 'translateY(-50%)',
+          opacity: 0,
+          pointerEvents: 'none',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 10,
+        }}
+      >
+        <div
+          style={{
+            width: 14,
+            height: 170,
+            borderRadius: 8,
+            background: 'rgba(255, 255, 255, 0.08)',
+            border: '1px solid rgba(203, 184, 255, 0.45)',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column-reverse',
+          }}
+        >
+          <div
+            ref={meterFillRef}
+            style={{ width: '100%', height: '0%', background: 'linear-gradient(to top, #cbb8ff, #e8dcff)' }}
+          />
+        </div>
+        <span
+          style={{
+            fontSize: 11,
+            letterSpacing: '0.14em',
+            textTransform: 'uppercase',
+            color: '#cbb8ff',
+            opacity: 0.9,
+          }}
+        >
+          Charge
+        </span>
+      </div>
+
       {/* Quiz Gate 1 (JOURNEY.md). Blocks forward scroll until answered. The
           outer wrapper ignores the mouse so scrolling passes through; the inner
           card's pointer-events are toggled with its visibility by
@@ -286,7 +382,7 @@ export default function App() {
           </p>
           {gate1Passed ? (
             <p style={{ margin: '14px 0 0', fontSize: 'clamp(15px, 2.2vw, 18px)', color: '#cfe9ef' }}>
-              Correct — keep scrolling to dive in.
+              Correct. Keep scrolling to dive in.
             </p>
           ) : (
             <>

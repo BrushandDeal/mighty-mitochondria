@@ -90,12 +90,23 @@ current code already honours the OS `prefers-reduced-motion` setting via
 - **Scene 4 (the matrix / engine room) — done.** `scenes/MatrixScene.jsx` = a
   cool glowing circular mtDNA loop + drifting enzyme/ribosome specks + a MUTED
   warm haze (deliberately not vivid gold, to protect the ATP-synthase payoff).
-  Reached via the spiral dive in `CameraRig.jsx`. `ScrollControls pages` is 12.
+  Reached via the spiral dive in `CameraRig.jsx`.
+- **Scene 5 (electron transport chain) — PART ONE done; part two pending.**
+  `scenes/ElectronTransportChainScene.jsx` = three cyan pumping stations (I, III,
+  IV) with a deliberate GAP for Complex II; GOLD electrons hopping; VIOLET protons
+  pumped matrix -> intermembrane space only; a numberless "Charge" meter (in
+  App.jsx). This is the site's first use of gold (energy) and violet (protons).
+  **Part two (not built):** the Complex II "odd one out" beat — a fourth,
+  non-pumping station fed by a side-entry electron from the matrix, with a camera
+  swing onto it. Fill the reserved gap at x = -0.3 in that session.
+- **The inner membrane no longer spins** (needed a fixed orientation for Scene 5's
+  stations). The bean + pores still spin in their own scenes, so the cold open
+  stays alive. `ScrollControls pages` is 15.
 - **Known-rough / deferred polish:** the interior 3D (cristae, inner membrane,
-  matrix) is placeholder-quality; the spiral dive and matrix framing were tuned
-  down (fewer turns, dimmer, camera pulled back) per owner feedback but still want
-  real polish. Also deferred: true bloom post-processing, higher-fidelity geometry.
-- **Not built yet (later, verified phases):** Scene 5 (electron transport chain),
+  matrix, ETC stations) is placeholder-quality; spiral/matrix framing tuned per
+  owner feedback but still want real polish. Deferred: true bloom, higher-fidelity
+  geometry. Project text rule: no em dashes in on-screen UI strings.
+- **Not built yet (later, verified phases):** Scene 5 part two (Complex II),
   Scene 6 (ATP synthase) + Gate 2, Scenes 7-10, Gate 3, the settled/frontier
   threshold, progress bar, audio, mobile optimizations.
 

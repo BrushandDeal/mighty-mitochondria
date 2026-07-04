@@ -1,9 +1,9 @@
-import { useMemo, useRef, useEffect } from 'react'
+import { useMemo, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { useScroll } from '@react-three/drei'
 import { MeshStandardMaterial } from 'three'
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion.js'
-import { ROTATION_SPEED, interiorFactor, matrixFactor } from '../journeyRanges.js'
+import { matrixFactor } from '../journeyRanges.js'
 
 /*
  * InnerMembraneScene — JOURNEY.md Scene 3, "inner membrane & cristae (the folds)".
@@ -39,7 +39,6 @@ const CYAN = '#40cfe0' // structure / membrane colour (JOURNEY.md section 4)
 const CRISTAE_COUNT = 13
 
 export function InnerMembraneScene() {
-  const groupRef = useRef()
   const scroll = useScroll()
   const prefersReducedMotion = usePrefersReducedMotion()
 
@@ -76,14 +75,10 @@ export function InnerMembraneScene() {
     return list
   }, [])
 
-  useFrame((_state, delta) => {
-    const inside = interiorFactor(scroll.offset)
-
-    // Spin in lockstep with the rest of the organelle, but let the spin ease to
-    // a stop as we go inside (inside -> 1), so the fold sweep stays stable.
-    if (!prefersReducedMotion && groupRef.current) {
-      groupRef.current.rotation.y += delta * ROTATION_SPEED * (1 - inside)
-    }
+  useFrame((_state) => {
+    // The inner membrane does NOT spin: Scene 5 pins stations to this wall and
+    // needs a fixed, known orientation. (The bean and pores still spin in their
+    // own scenes, so the cold open still feels alive.)
 
     // The cool energy shimmer: a subtle, slow brightening of the folds. Held
     // steady when the visitor prefers reduced motion.
@@ -98,7 +93,7 @@ export function InnerMembraneScene() {
   })
 
   return (
-    <group ref={groupRef}>
+    <group>
       {/* The sealed inner membrane: a closed, faint, translucent cyan surface.
           Nothing passes through it — that is the point. */}
       <mesh scale={[IA, IB, IC]}>

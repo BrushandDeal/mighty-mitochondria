@@ -1,0 +1,227 @@
+import { useMemo, useRef, useEffect } from 'react'
+import { useFrame } from '@react-three/fiber'
+import { useScroll } from '@react-three/drei'
+import { MeshStandardMaterial, Quaternion, Vector3 } from 'three'
+import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion.js'
+
+/*
+ * ElectronTransportChainScene — JOURNEY.md Scene 5, PART ONE ("the main line").
+ *
+ * Facts this scene teaches (RESEARCH.md Part A):
+ *  - The electron transport chain pumps protons FROM the matrix INTO the
+ *    intermembrane space, building a gradient.
+ *  - That gradient is electrochemical — a real voltage, not just a pile-up.
+ *  - The sealed inner membrane holding separated charge behaves like a battery.
+ *
+ * So: a row of three CYAN pumping stations embedded in the inner membrane wall
+ * (Complexes I, III, IV — the ones that pump). GOLD electrons hop along the row;
+ * each arrival pumps a VIOLET proton from the matrix side across to the
+ * intermembrane-space side. As protons accumulate, the far side glows and a
+ * qualitative charge meter (in App.jsx, no numbers) climbs.
+ *
+ * Guardrails baked in:
+ *  - Protons pumped matrix -> intermembrane space only (outward). Nothing else
+ *    crosses the sealed wall.
+ *  - Electrons GOLD (energy), stations/membrane CYAN (structure), protons a
+ *    DISTINCT pale violet so they never blur with either.
+ *  - No ATP, ATP synthase, oxygen, or water (those are later scenes). No numbers.
+ *  - A clear GAP is left in the row for the non-pumping Complex II, which part
+ *    two will insert. It is NOT built here.
+ *
+ * Orientation note: the inner membrane no longer spins, so its +z face is fixed
+ * and these world-space positions line up with it.
+ */
+
+// Inner membrane half-widths — must match InnerMembraneScene.jsx.
+const IA = 1.45
+const IB = 0.8
+const IC = 0.8
+
+const CYAN = '#40cfe0' // stations / membrane (structure)
+const GOLD = '#ffcf70' // electrons (energy)
+const PROTON = '#cbb8ff' // pale violet — neither gold nor cyan
+
+// The three pumping stations sit at these x positions on the +z face. The GAP at
+// x = -0.3 (between the first two) is deliberately left empty for Complex II,
+// which part two will insert. Do not fill it here.
+const STATION_X = [-0.9, 0.3, 0.9]
+
+const PROTONS_PER_STATION = 4
+const ELECTRON_COUNT = 5
+
+// A point on the inner-membrane +z face at a given x (y = 0).
+function surfaceZ(x) {
+  return IC * Math.sqrt(Math.max(0, 1 - (x / IA) ** 2))
+}
+
+// Outward normal (toward the intermembrane space) of the ellipsoid at that point.
+function surfaceNormal(x, z) {
+  return new Vector3(x / (IA * IA), 0, z / (IC * IC)).normalize()
+}
+
+const clamp01 = (v) => Math.min(1, Math.max(0, v))
+// A 0 -> 1 -> 0 envelope so a proton fades in as it leaves the station and fades
+// out as it reaches the far side (no popping).
+const envelope = (p) => clamp01(p * 5) * clamp01((1 - p) * 5)
+
+export function ElectronTransportChainScene() {
+  const scroll = useScroll()
+  const prefersReducedMotion = usePrefersReducedMotion()
+  const timeRef = useRef(0)
+  const electronRefs = useRef([])
+  const protonRefs = useRef([])
+  const imsLight = useRef()
+
+  // Shared materials so the whole scene fades together (opacity = presence).
+  const stationMat = useMemo(
+    () =>
+      new MeshStandardMaterial({
+        color: CYAN,
+        emissive: CYAN,
+        emissiveIntensity: 0.4,
+        transparent: true,
+        opacity: 0,
+        roughness: 0.5,
+        metalness: 0.1,
+      }),
+    []
+  )
+  const electronMat = useMemo(
+    () =>
+      new MeshStandardMaterial({
+        color: GOLD,
+        emissive: GOLD,
+        emissiveIntensity: 1.2,
+        transparent: true,
+        opacity: 0,
+      }),
+    []
+  )
+  const protonMat = useMemo(
+    () =>
+      new MeshStandardMaterial({
+        color: PROTON,
+        emissive: PROTON,
+        emissiveIntensity: 0.9,
+        transparent: true,
+        opacity: 0,
+      }),
+    []
+  )
+  useEffect(
+    () => () => {
+      stationMat.dispose()
+      electronMat.dispose()
+      protonMat.dispose()
+    },
+    [stationMat, electronMat, protonMat]
+  )
+
+  // Precompute each station's surface point, outward normal, and the tilt that
+  // stands it up through the membrane.
+  const stations = useMemo(() => {
+    const axis = new Vector3(0, 1, 0) // a cylinder's default long axis
+    return STATION_X.map((x) => {
+      const z = surfaceZ(x)
+      const point = new Vector3(x, 0, z)
+      const normal = surfaceNormal(x, z)
+      const quat = new Quaternion().setFromUnitVectors(axis, normal)
+      return { point, normal, quat: [quat.x, quat.y, quat.z, quat.w] }
+    })
+  }, [])
+
+  // Flatten the protons into one list so we can hold a ref per proton.
+  const protons = useMemo(() => {
+    const list = []
+    stations.forEach((s, si) => {
+      for (let k = 0; k < PROTONS_PER_STATION; k++) {
+        list.push({ station: s, phase: k / PROTONS_PER_STATION + si * 0.13 })
+      }
+    })
+    return list
+  }, [stations])
+
+  useFrame((_state, delta) => {
+    const offset = scroll.offset
+    // presence: the scene fades in as Scene 5 begins (so earlier scenes stay
+    // clean). charge: climbs as we track along the row.
+    const presence = clamp01((offset - 0.81) / 0.04)
+    const charge = clamp01((offset - 0.84) / 0.14)
+
+    stationMat.opacity = presence
+    stationMat.emissiveIntensity = 0.4 + 0.7 * charge // membrane glows as it charges
+    electronMat.opacity = presence
+    protonMat.opacity = presence
+    if (imsLight.current) imsLight.current.intensity = 3 * presence * charge
+
+    // Advance the animation clock (frozen under reduced motion).
+    if (!prefersReducedMotion) timeRef.current += delta
+    const t = timeRef.current
+
+    // Electrons glide along the row (just inside the wall) and loop.
+    for (let i = 0; i < ELECTRON_COUNT; i++) {
+      const mesh = electronRefs.current[i]
+      if (!mesh) continue
+      const phase = (t * 0.12 + i / ELECTRON_COUNT) % 1
+      const x = -1.2 + phase * 2.4
+      mesh.position.set(x, 0, surfaceZ(x) - 0.05)
+    }
+
+    // Protons are pumped from the matrix side outward across the wall.
+    for (let i = 0; i < protons.length; i++) {
+      const mesh = protonRefs.current[i]
+      if (!mesh) continue
+      const { station, phase } = protons[i]
+      const p = (t * 0.3 + phase) % 1
+      const along = -0.12 + p * 0.67 // from just inside (-0.12) to outside (+0.55)
+      mesh.position.set(
+        station.point.x + station.normal.x * along,
+        station.point.y + station.normal.y * along,
+        station.point.z + station.normal.z * along
+      )
+      const s = presence * envelope(p)
+      mesh.scale.setScalar(s)
+    }
+  })
+
+  return (
+    <group>
+      {/* Three pumping stations embedded in the wall. */}
+      {stations.map((s, i) => (
+        <mesh key={i} position={s.point} quaternion={s.quat} material={stationMat}>
+          <cylinderGeometry args={[0.13, 0.13, 0.34, 20]} />
+        </mesh>
+      ))}
+
+      {/* Gold electrons hopping along the row (positions set each frame). */}
+      {Array.from({ length: ELECTRON_COUNT }).map((_, i) => (
+        <mesh
+          key={`e-${i}`}
+          ref={(el) => {
+            electronRefs.current[i] = el
+          }}
+          material={electronMat}
+        >
+          <sphereGeometry args={[0.05, 12, 12]} />
+        </mesh>
+      ))}
+
+      {/* Violet protons being pumped across (positions and scale set each frame). */}
+      {protons.map((_, i) => (
+        <mesh
+          key={`p-${i}`}
+          ref={(el) => {
+            protonRefs.current[i] = el
+          }}
+          material={protonMat}
+        >
+          <sphereGeometry args={[0.045, 10, 10]} />
+        </mesh>
+      ))}
+
+      {/* The accumulating charge on the intermembrane-space side: a violet glow
+          that grows as protons pile up. */}
+      <pointLight ref={imsLight} color={PROTON} intensity={0} position={[0, 0, 1.15]} distance={3} decay={2} />
+    </group>
+  )
+}
