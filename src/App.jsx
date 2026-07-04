@@ -332,7 +332,7 @@ export default function App() {
       <div ref={scene6Ref} style={{ ...overlayBase, opacity: 0 }}>
         <p className="scene6-copy" style={copyStyle}>
           Here&rsquo;s the payoff. All that stored charge has one way out that
-          powers the cell: back through a single machine, ATP synthase. The rush
+          makes ATP: back through a single machine, ATP synthase. The rush
           of protons spins it like a revolving door, and every turn snaps loose
           parts together into ATP, your body&rsquo;s energy currency. It
           isn&rsquo;t conjured from nothing; the machine bolts together pieces
