@@ -109,9 +109,10 @@ current code already honours the OS `prefers-reduced-motion` setting via
   matrix, ETC stations) is placeholder-quality; spiral/matrix framing tuned per
   owner feedback but still want real polish. Deferred: true bloom, higher-fidelity
   geometry. Project text rule: no em dashes in on-screen UI strings.
-- **Not built yet (later, verified phases):** Scene 5 part two (Complex II),
-  Scene 6 (ATP synthase) + Gate 2, Scenes 7-10, Gate 3, the settled/frontier
-  threshold, progress bar, audio, mobile optimizations.
+- **Not built yet (later, verified phases):** Scene 6 (ATP synthase, the visual
+  climax) + Gate 2, Scene 7 (zoom to body), Scene 8 (bigger story) + Gate 3, the
+  settled/frontier threshold, Scene 9 (frontier), Scene 10 (closing), progress
+  bar, audio, mobile optimizations.
 
 ## Colour grammar (JOURNEY.md section 4)
 
