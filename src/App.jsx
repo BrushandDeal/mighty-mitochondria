@@ -405,7 +405,7 @@ export default function App() {
                     onClick={() => handleAnswer(o.correct)}
                     style={answerButtonStyle}
                   >
-                    {o.label}
+                    {o.key}) {o.label}
                   </button>
                 ))}
               </div>
