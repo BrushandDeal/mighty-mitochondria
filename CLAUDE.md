@@ -60,12 +60,19 @@ current code already honours the OS `prefers-reduced-motion` setting via
   scenes here as sibling files; do not rearchitect.
 - `src/hooks/` — small reusable React hooks (e.g. reduced-motion).
 
+## Links
+
+- **Repo:** https://github.com/BrushandDeal/mighty-mitochondria (public)
+- **Live site:** https://mighty-mitochondria.vercel.app
+- **Deploy:** Vercel, connected to the GitHub repo. Every push to `main`
+  auto-deploys. Custom domain (mightymitochondria.com) is not set up yet.
+
 ## Status
 
 - **Phase 1 (walking skeleton) — done.** Scaffold runs; one placeholder scene (a
   glowing, rotating, bean-shaped mitochondrion in dark space) responds to scroll;
-  deployed to Vercel. The palette, scroll pipeline, and reusable scene structure
-  are proven.
+  deployed live to Vercel. The palette, scroll pipeline, reusable scene
+  structure, and GitHub→Vercel auto-deploy are all proven.
 - **Not built yet (later, verified phases):** the other JOURNEY.md scenes, quiz
   gates, the settled/frontier threshold, progress bar, audio, mobile
   optimizations, true bloom post-processing, real cristae geometry.
