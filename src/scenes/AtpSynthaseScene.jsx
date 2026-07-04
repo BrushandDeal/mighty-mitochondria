@@ -51,6 +51,21 @@ const HEAD_Z = 0.5
 const clamp01 = (v) => Math.min(1, Math.max(0, v))
 const envelope = (p) => clamp01(p * 5) * clamp01((1 - p) * 5)
 
+// --- ATP side journey (the "what is ATP" explainer, to the right of the motor) ---
+// A single ATP molecule (adenosine body plus three phosphate beads) runs a
+// charge, spend, recharge loop: the outer phosphate splits off (energy released),
+// a gold spark carries that energy to a gear, the gear turns and switches a light
+// on, the molecule dims to ADP (two beads), then a phosphate clips back on.
+const GEAR = '#7f8a99' // neutral machine grey (structure, deliberately not energy)
+const BULB = '#eef4ff' // the cool white light the gear switches on
+const MOL = new Vector3(1.05, 0.2, 0.45) // the adenosine body position
+const BEAD_DX = [0.14, 0.25, 0.36] // the three phosphate beads, clipped in a row
+const BEAD2_ATTACHED = new Vector3(MOL.x + BEAD_DX[2], MOL.y, MOL.z)
+const BEAD_RELEASED = new Vector3(1.62, 0.02, 0.42) // where the freed phosphate drifts
+const GEAR_POS = new Vector3(1.2, -0.12, 0.4)
+const BULB_POS = new Vector3(1.46, -0.08, 0.4)
+const DETOUR_SPEED = 0.22 // loop rate for the charge, spend, recharge cycle
+
 export function AtpSynthaseScene() {
   const scroll = useScroll()
   const prefersReducedMotion = usePrefersReducedMotion()
@@ -61,6 +76,12 @@ export function AtpSynthaseScene() {
   const phosRefs = useRef([])
   const coinRefs = useRef([])
   const glowLight = useRef()
+  // Side-journey refs.
+  const bead2Ref = useRef() // the outer phosphate that detaches and returns
+  const goldMolLight = useRef() // the ATP gold glow (on when charged)
+  const gearRef = useRef()
+  const bulbLight = useRef()
+  const sparkRef = useRef()
 
   const structureMat = useMemo(
     () =>
@@ -137,6 +158,80 @@ export function AtpSynthaseScene() {
       }),
     []
   )
+  // Side-journey materials. The body reuses the minting ADP colour and the beads
+  // reuse the minting phosphate colour, so they read as the same molecules.
+  const detourBodyMat = useMemo(
+    () =>
+      new MeshStandardMaterial({
+        color: ADP,
+        emissive: ADP,
+        emissiveIntensity: 0.4,
+        transparent: true,
+        opacity: 0,
+        roughness: 0.6,
+      }),
+    []
+  )
+  const detourBeadMat = useMemo(
+    () =>
+      new MeshStandardMaterial({
+        color: PHOS,
+        emissive: PHOS,
+        emissiveIntensity: 0.35,
+        transparent: true,
+        opacity: 0,
+        roughness: 0.6,
+      }),
+    []
+  )
+  // The gold "charged" halo around the molecule (bright as ATP, dim as ADP).
+  const detourGoldMat = useMemo(
+    () =>
+      new MeshBasicMaterial({
+        color: GOLD,
+        transparent: true,
+        opacity: 0,
+        depthWrite: false,
+        blending: 2,
+      }),
+    []
+  )
+  const gearMat = useMemo(
+    () =>
+      new MeshStandardMaterial({
+        color: GEAR,
+        emissive: GEAR,
+        emissiveIntensity: 0.15,
+        transparent: true,
+        opacity: 0,
+        roughness: 0.5,
+        metalness: 0.4,
+      }),
+    []
+  )
+  const bulbMat = useMemo(
+    () =>
+      new MeshStandardMaterial({
+        color: BULB,
+        emissive: BULB,
+        emissiveIntensity: 0,
+        transparent: true,
+        opacity: 0,
+        roughness: 0.3,
+      }),
+    []
+  )
+  const sparkMat = useMemo(
+    () =>
+      new MeshBasicMaterial({
+        color: GOLD,
+        transparent: true,
+        opacity: 0,
+        depthWrite: false,
+        blending: 2,
+      }),
+    []
+  )
   useEffect(
     () => () => {
       structureMat.dispose()
@@ -145,8 +240,27 @@ export function AtpSynthaseScene() {
       adpMat.dispose()
       phosMat.dispose()
       haloMat.dispose()
+      detourBodyMat.dispose()
+      detourBeadMat.dispose()
+      detourGoldMat.dispose()
+      gearMat.dispose()
+      bulbMat.dispose()
+      sparkMat.dispose()
     },
-    [structureMat, protonMat, coinMat, adpMat, phosMat, haloMat]
+    [
+      structureMat,
+      protonMat,
+      coinMat,
+      adpMat,
+      phosMat,
+      haloMat,
+      detourBodyMat,
+      detourBeadMat,
+      detourGoldMat,
+      gearMat,
+      bulbMat,
+      sparkMat,
+    ]
   )
 
   // One "assembler" per catalytic site: where the parts meet, where the ADP and
@@ -171,8 +285,8 @@ export function AtpSynthaseScene() {
   )
 
   useFrame((_state, delta) => {
-    // Scene 6 fades in as we leave the Complex II hold. (Re-spaced for pages=22.)
-    const presence = clamp01((scroll.offset - 0.83) / 0.04)
+    // Scene 6 fades in as we leave the Complex II hold. (Re-spaced for pages=25.)
+    const presence = clamp01((scroll.offset - 0.73) / 0.03)
 
     structureMat.opacity = presence
     protonMat.opacity = presence
@@ -237,6 +351,65 @@ export function AtpSynthaseScene() {
           coin.scale.setScalar(presence * clamp01((1 - q) * 3))
           coin.rotation.z += delta * 4
         }
+      }
+    }
+
+    // --- ATP side journey: charge, spend, recharge loop ---
+    // Visible only during the swing-right hold (so it never clutters the climax).
+    const dPres =
+      clamp01((scroll.offset - 0.845) / 0.015) * (1 - clamp01((scroll.offset - 0.95) / 0.015))
+
+    const dp = (t * DETOUR_SPEED) % 1
+    let charged // 1 as ATP (three beads, gold on), 0 as ADP (two beads, dim)
+    let work // 1 while energy is being spent (gear turning, light on)
+    let beadOut // how far the outer phosphate has detached (0 attached, 1 free)
+    if (dp < 0.3) {
+      charged = 1
+      work = 0
+      beadOut = 0
+    } else if (dp < 0.5) {
+      const q = (dp - 0.3) / 0.2
+      charged = 1 - q
+      work = q
+      beadOut = q
+    } else if (dp < 0.7) {
+      charged = 0
+      work = 1 - (dp - 0.5) / 0.2
+      beadOut = 1
+    } else {
+      const q = (dp - 0.7) / 0.3
+      charged = q
+      work = 0
+      beadOut = 1 - q
+    }
+
+    detourBodyMat.opacity = dPres
+    detourBeadMat.opacity = dPres
+    gearMat.opacity = dPres
+    bulbMat.opacity = dPres
+    detourGoldMat.opacity = dPres * (0.08 + 0.35 * charged) // gold glow: bright as ATP
+    bulbMat.emissiveIntensity = 1.6 * work // the light the gear switches on
+    if (goldMolLight.current) goldMolLight.current.intensity = dPres * (0.4 + 2.2 * charged)
+    if (bulbLight.current) bulbLight.current.intensity = dPres * 3 * work
+
+    // The outer phosphate splits off (energy released) and later clips back on.
+    if (bead2Ref.current) {
+      bead2Ref.current.position.lerpVectors(BEAD2_ATTACHED, BEAD_RELEASED, beadOut)
+      bead2Ref.current.scale.setScalar(dPres)
+    }
+    // The gear turns while work is happening; that turning is what lights the bulb.
+    if (gearRef.current && !prefersReducedMotion) {
+      gearRef.current.rotation.z += delta * work * 6
+    }
+    // A gold spark carries the released energy from the molecule to the gear.
+    if (sparkRef.current) {
+      if (dp >= 0.3 && dp < 0.5) {
+        const sp = (dp - 0.3) / 0.2
+        sparkRef.current.position.lerpVectors(BEAD2_ATTACHED, GEAR_POS, sp)
+        sparkRef.current.scale.setScalar(dPres)
+        sparkMat.opacity = dPres * envelope(sp)
+      } else {
+        sparkMat.opacity = 0
       }
     }
   })
@@ -330,6 +503,54 @@ export function AtpSynthaseScene() {
 
       {/* The peak gold glow at the head. */}
       <pointLight ref={glowLight} color={GOLD} intensity={0} position={[0, 0, HEAD_Z]} distance={3} decay={2} />
+
+      {/* --- ATP side journey explainer (to the right of the motor) --- */}
+      {/* The adenosine body. */}
+      <mesh position={MOL} material={detourBodyMat}>
+        <icosahedronGeometry args={[0.11, 0]} />
+      </mesh>
+      {/* The two phosphate beads that stay clipped on. */}
+      <mesh position={[MOL.x + BEAD_DX[0], MOL.y, MOL.z]} material={detourBeadMat}>
+        <sphereGeometry args={[0.05, 12, 12]} />
+      </mesh>
+      <mesh position={[MOL.x + BEAD_DX[1], MOL.y, MOL.z]} material={detourBeadMat}>
+        <sphereGeometry args={[0.05, 12, 12]} />
+      </mesh>
+      {/* The outer phosphate that splits off and later clips back on. */}
+      <mesh ref={bead2Ref} material={detourBeadMat}>
+        <sphereGeometry args={[0.05, 12, 12]} />
+      </mesh>
+      {/* The gold "charged" halo (bright as ATP, dim as ADP) and its light. */}
+      <mesh position={MOL} material={detourGoldMat}>
+        <sphereGeometry args={[0.34, 20, 20]} />
+      </mesh>
+      <pointLight ref={goldMolLight} color={GOLD} intensity={0} position={MOL} distance={2} decay={2} />
+
+      {/* The gear (hub plus teeth) that the released energy turns. */}
+      <group ref={gearRef} position={GEAR_POS}>
+        <mesh rotation={[Math.PI / 2, 0, 0]} material={gearMat}>
+          <cylinderGeometry args={[0.09, 0.09, 0.05, 16]} />
+        </mesh>
+        {Array.from({ length: 8 }).map((_, i) => {
+          const a = (i / 8) * Math.PI * 2
+          return (
+            <mesh key={i} position={[0.115 * Math.cos(a), 0.115 * Math.sin(a), 0]} material={gearMat}>
+              <boxGeometry args={[0.035, 0.035, 0.05]} />
+            </mesh>
+          )
+        })}
+      </group>
+
+      {/* The light the turning gear switches on. */}
+      <mesh position={BULB_POS} material={bulbMat}>
+        <sphereGeometry args={[0.07, 16, 16]} />
+      </mesh>
+      <pointLight ref={bulbLight} color={BULB} intensity={0} position={BULB_POS} distance={2} decay={2} />
+
+      {/* The gold spark that carries the released energy from molecule to gear. */}
+      <mesh ref={sparkRef} material={sparkMat}>
+        <sphereGeometry args={[0.035, 8, 8]} />
+      </mesh>
     </group>
   )
 }

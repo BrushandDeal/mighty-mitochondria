@@ -110,13 +110,23 @@ current code already honours the OS `prefers-reduced-motion` setting via
   then hero push-ins. Charge meter has an electric-crackle discharge animation
   (index.css `.charge-electric`); the Scene 6 copy uses a colour-fading, dark-halo
   treatment (index.css `.scene6-copy`) so it reads over the bright climax.
+- **Scene 6 ATP side journey ("what is ATP") — DONE.** Additive detour inside
+  Scene 6 (does not change the minting climax). Within Scene 6 the camera swings
+  right to a clear area and holds on an explainer molecule (adenosine body + three
+  phosphate beads) that runs a charge/spend/recharge loop: the outer phosphate
+  splits off, a gold spark turns a gear, the gear switches a light on, the molecule
+  dims to ADP (two beads), then a phosphate clips back on. Then it swings back to
+  the synthase push-in. Copy verbatim in App.jsx (`detourRef`); the three ATP facts
+  were added to RESEARCH.md Part A and a "Side journey: What is ATP" subsection to
+  JOURNEY.md. Project text rule reaffirmed: NO em dashes anywhere (code, comments,
+  docs); use commas, colons, parentheses.
 - **The inner membrane no longer spins** (needed a fixed orientation for Scene 5's
   stations). The bean + pores still spin in their own scenes, so the cold open
-  stays alive. `ScrollControls pages` is 22. NOTE: adding a scene at the end
-  re-spaces every scroll constant by a uniform factor (all offsets in CameraRig,
-  journeyRanges, App overlays, and the ETC/ATP scenes' presence/charge) — keep them
-  in sync or scenes drift out of alignment. This is getting unwieldy; a future
-  refactor to absolute page-based positions would help.
+  stays alive. `ScrollControls pages` is 25. NOTE: adding a scene (or the ATP
+  detour) re-spaces every scroll constant by a uniform factor (all offsets in
+  CameraRig, journeyRanges, App overlays, and the ETC/ATP scenes' presence/charge);
+  keep them in sync or scenes drift out of alignment. This is unwieldy; a future
+  refactor to absolute page-based positions would help before the back half.
 - **Known-rough / deferred polish:** the interior 3D (cristae, inner membrane,
   matrix, ETC stations) is placeholder-quality; spiral/matrix framing tuned per
   owner feedback but still want real polish. Deferred: true bloom, higher-fidelity

@@ -16,10 +16,10 @@ import { GATE1_OFFSET } from './journeyRanges.js'
  * <Canvas> is the 3D drawing surface that fills the browser window. Everything
  * inside it is 3D. The <div> text overlays sit on top in plain HTML.
  *
- * <ScrollControls pages={22}> makes the page twenty-two screens tall so there is
- * room for the whole journey so far: overview -> membrane -> inside to the
- * cristae -> Quiz Gate 1 -> the spiral dive into the matrix -> the electron
- * transport chain -> ATP synthase (the climax). CameraRig moves the camera.
+ * <ScrollControls pages={25}> makes the page twenty-five screens tall so there is
+ * room for the whole journey so far: overview, membrane, inside to the cristae,
+ * Quiz Gate 1, the spiral dive into the matrix, the electron transport chain, and
+ * ATP synthase with its "what is ATP" side journey. CameraRig moves the camera.
  *
  * To add the next JOURNEY.md scene, create a component in /scenes, drop it in
  * beside the others, add a camera waypoint, and lengthen `pages` if needed.
@@ -64,6 +64,7 @@ function OverlayController({
   scene4Ref,
   scene5Ref,
   scene6Ref,
+  detourRef,
   gateRef,
   gatePassed,
   meterRef,
@@ -73,21 +74,22 @@ function OverlayController({
   const scroll = useScroll()
   useFrame(() => {
     const o = scroll.offset
-    // (All thresholds were scaled by 18/22 when ATP synthase was added.)
+    // (Thresholds for Scenes 0 to 5 were scaled by 22/25 when the ATP side
+    // journey was added; Scene 6 timings were re-laid for the detour.)
     // Scene 0 title: fully visible at the top, fades out early.
     if (titleRef.current) {
-      titleRef.current.style.opacity = String(1 - clamp01(o / 0.047))
+      titleRef.current.style.opacity = String(1 - clamp01(o / 0.041))
     }
     // Scene 2 copy: fades in at the membrane, back out as we slip inside.
     if (scene2Ref.current) {
-      const inAmount = clamp01((o - 0.15) / 0.027)
-      const outAmount = 1 - clamp01((o - 0.205) / 0.027)
+      const inAmount = clamp01((o - 0.132) / 0.024)
+      const outAmount = 1 - clamp01((o - 0.18) / 0.024)
       scene2Ref.current.style.opacity = String(inAmount * outAmount)
     }
     // Scene 3 copy: fades in during the fold sweep, out as we reach the gate.
     if (scene3Ref.current) {
-      const inAmount = clamp01((o - 0.273) / 0.027)
-      const outAmount = 1 - clamp01((o - 0.313) / 0.02)
+      const inAmount = clamp01((o - 0.24) / 0.024)
+      const outAmount = 1 - clamp01((o - 0.275) / 0.018)
       scene3Ref.current.style.opacity = String(inAmount * outAmount)
     }
     // Quiz card: the question shows once we reach the gate. After it is passed,
@@ -95,44 +97,53 @@ function OverlayController({
     // Pointer-events are only on while the question is up, so the card never
     // blocks scrolling once answered (and hidden buttons can't click).
     if (gateRef.current) {
-      const nearGate = o > 0.313
-      const show = gatePassed ? (nearGate && o < 0.395 ? 1 : 0) : nearGate ? 1 : 0
+      const nearGate = o > 0.275
+      const show = gatePassed ? (nearGate && o < 0.348 ? 1 : 0) : nearGate ? 1 : 0
       gateRef.current.style.opacity = String(show)
       gateRef.current.style.pointerEvents = show && !gatePassed ? 'auto' : 'none'
     }
     // Scene 4 copy: fades in during the matrix float, out before Scene 5.
     if (scene4Ref.current) {
-      const inAmount = clamp01((o - 0.497) / 0.02)
-      const outAmount = 1 - clamp01((o - 0.532) / 0.02)
+      const inAmount = clamp01((o - 0.437) / 0.018)
+      const outAmount = 1 - clamp01((o - 0.468) / 0.018)
       scene4Ref.current.style.opacity = String(inAmount * outAmount)
     }
     // Scene 5 copy: fades in as we track the stations, stays through the Complex
     // II beat, then fades out as ATP synthase takes over.
     if (scene5Ref.current) {
-      const inAmount = clamp01((o - 0.6) / 0.027)
-      const outAmount = 1 - clamp01((o - 0.83) / 0.03)
+      const inAmount = clamp01((o - 0.528) / 0.024)
+      const outAmount = 1 - clamp01((o - 0.73) / 0.026)
       scene5Ref.current.style.opacity = String(inAmount * outAmount)
     }
-    // Scene 6 copy: fades in during the ATP synthase orbit/push-in.
+    // Scene 6 climax copy: fades in during the orbit (naming ATP), out as the
+    // side journey begins.
     if (scene6Ref.current) {
-      scene6Ref.current.style.opacity = String(clamp01((o - 0.87) / 0.03))
+      const inAmount = clamp01((o - 0.74) / 0.02)
+      const outAmount = 1 - clamp01((o - 0.84) / 0.015)
+      scene6Ref.current.style.opacity = String(inAmount * outAmount)
+    }
+    // ATP side-journey copy: fades in during the swing-right hold, out on return.
+    if (detourRef.current) {
+      const inAmount = clamp01((o - 0.855) / 0.015)
+      const outAmount = 1 - clamp01((o - 0.94) / 0.012)
+      detourRef.current.style.opacity = String(inAmount * outAmount)
     }
     // Charge meter: fades in with Scene 5, its fill climbs as charge builds, then
-    // DISCHARGES (drops) in Scene 6 as protons flow back through ATP synthase.
+    // DISCHARGES (drops) during the Scene 6 orbit as protons flow back.
     if (meterRef.current) {
-      const meterIn = clamp01((o - 0.552) / 0.027)
-      const meterOut = 1 - clamp01((o - 0.96) / 0.03)
+      const meterIn = clamp01((o - 0.486) / 0.024)
+      const meterOut = 1 - clamp01((o - 0.97) / 0.02)
       meterRef.current.style.opacity = String(meterIn * meterOut)
     }
     if (meterFillRef.current) {
-      const build = clamp01((o - 0.573) / 0.096)
-      const discharge = clamp01((o - 0.84) / 0.11)
+      const build = clamp01((o - 0.504) / 0.084)
+      const discharge = clamp01((o - 0.77) / 0.085)
       meterFillRef.current.style.height = `${build * (1 - discharge) * 100}%`
     }
-    // Electricity: visible only while the bar is actively draining (0.84->0.95),
-    // so the crackle reads as the stored charge being spent.
+    // Electricity: visible only while the bar is actively draining (0.77 to
+    // 0.855), so the crackle reads as the stored charge being spent.
     if (meterElectricRef.current) {
-      const active = clamp01((o - 0.84) / 0.02) * (1 - clamp01((o - 0.95) / 0.02))
+      const active = clamp01((o - 0.77) / 0.02) * (1 - clamp01((o - 0.855) / 0.02))
       meterElectricRef.current.style.opacity = String(active)
     }
   })
@@ -187,6 +198,7 @@ export default function App() {
   const scene4Ref = useRef(null)
   const scene5Ref = useRef(null)
   const scene6Ref = useRef(null)
+  const detourRef = useRef(null)
   const gateRef = useRef(null)
   const meterRef = useRef(null)
   const meterFillRef = useRef(null)
@@ -234,6 +246,7 @@ export default function App() {
             scene4Ref={scene4Ref}
             scene5Ref={scene5Ref}
             scene6Ref={scene6Ref}
+            detourRef={detourRef}
             gateRef={gateRef}
             gatePassed={gate1Passed}
             meterRef={meterRef}
@@ -339,6 +352,22 @@ export default function App() {
           already floating nearby. You mint roughly your own body weight in ATP
           every single day, not by making that much new stuff, but by recycling a
           small amount through this motor hundreds of times over.
+        </p>
+      </div>
+
+      {/* ATP side-journey copy (JOURNEY.md "Side journey: What is ATP", verbatim).
+          Traces to RESEARCH.md Part A: ATP structure (three phosphates), energy
+          released by splitting the outer phosphate into ADP plus phosphate, and
+          the reversible recharge run by ATP synthase. */}
+      <div ref={detourRef} style={{ ...overlayBase, opacity: 0 }}>
+        <p className="scene6-copy" style={copyStyle}>
+          Quick detour: what is this coin, actually? ATP is your cell&rsquo;s
+          rechargeable energy carrier, a small molecule with three phosphate
+          groups clipped in a row. When something in the cell needs power, it pops
+          off the outer phosphate to release energy the cell puts to work, leaving
+          ADP behind with two. Later, this very machine clips a phosphate back on,
+          turning ADP back into ATP. You never hoard much of it; you spend and
+          recharge the same molecules hundreds of times a day.
         </p>
       </div>
 

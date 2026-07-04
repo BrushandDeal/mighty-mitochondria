@@ -184,11 +184,11 @@ export function ElectronTransportChainScene() {
     // presence: fades IN as Scene 5 begins (so earlier scenes stay clean) and
     // fades OUT as Scene 6 (ATP synthase) takes over, so the pumping apparatus
     // recedes for the climax. charge: climbs as we track along the row.
-    // (All re-spaced for pages=22.)
-    const presenceIn = clamp01((offset - 0.552) / 0.027)
-    const presenceOut = 1 - clamp01((offset - 0.82) / 0.05)
+    // (All re-spaced for pages=25.)
+    const presenceIn = clamp01((offset - 0.486) / 0.024)
+    const presenceOut = 1 - clamp01((offset - 0.722) / 0.044)
     const presence = presenceIn * presenceOut
-    const charge = clamp01((offset - 0.573) / 0.096)
+    const charge = clamp01((offset - 0.504) / 0.084)
 
     stationMat.opacity = presence
     stationMat.emissiveIntensity = 0.4 + 0.7 * charge // membrane glows as it charges

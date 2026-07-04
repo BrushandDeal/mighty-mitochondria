@@ -22,21 +22,21 @@ import { GATE1_OFFSET, SPIRAL_END } from './journeyRanges.js'
  * 1.45 x 0.8 x 0.8. Scene 5's stations sit on the inner membrane's +z face.
  */
 const WAYPOINTS = [
-  // Scene 0 / 1 — far overview, drifting in.
+  // Scene 0 / 1, far overview, drifting in.
   { at: 0.0, pos: [0, 0.5, 7.0], lookAt: [0, 0, 0] },
-  // Scene 1 — medium approach (smooth dolly-in from far to medium).
-  { at: 0.082, pos: [1.2, 0.6, 4.8], lookAt: [0, 0, 0] },
-  // Scene 2 — closing on the outer membrane surface.
-  { at: 0.143, pos: [0.4, 0.25, 3.0], lookAt: [0, 0, 0.6] },
-  // Scene 2 — right at the membrane; small sideways shift gives gentle parallax.
-  { at: 0.198, pos: [0.85, 0.15, 2.4], lookAt: [0.25, 0, 1.0] },
-  // Scene 3 — slip through the (now fading) outer membrane into the gap.
-  { at: 0.239, pos: [0.15, 0.05, 0.92], lookAt: [0, 0, 0] },
-  // Scene 3 — begin the sweep at one end of the fold stack.
-  { at: 0.286, pos: [-1.05, 0.08, 1.05], lookAt: [-0.4, 0, 0.15] },
-  // Scene 3 — sweep to the far end past wall after wall of cristae.
-  { at: 0.327, pos: [1.05, 0.05, 1.05], lookAt: [0.4, 0, 0.15] },
-  // Gate 1 hold — sweep-end pose, aim re-centred so the spiral begins seamlessly.
+  // Scene 1, medium approach (smooth dolly-in from far to medium).
+  { at: 0.072, pos: [1.2, 0.6, 4.8], lookAt: [0, 0, 0] },
+  // Scene 2, closing on the outer membrane surface.
+  { at: 0.126, pos: [0.4, 0.25, 3.0], lookAt: [0, 0, 0.6] },
+  // Scene 2, right at the membrane; small sideways shift gives gentle parallax.
+  { at: 0.174, pos: [0.85, 0.15, 2.4], lookAt: [0.25, 0, 1.0] },
+  // Scene 3, slip through the (now fading) outer membrane into the gap.
+  { at: 0.21, pos: [0.15, 0.05, 0.92], lookAt: [0, 0, 0] },
+  // Scene 3, begin the sweep at one end of the fold stack.
+  { at: 0.252, pos: [-1.05, 0.08, 1.05], lookAt: [-0.4, 0, 0.15] },
+  // Scene 3, sweep to the far end past wall after wall of cristae.
+  { at: 0.288, pos: [1.05, 0.05, 1.05], lookAt: [0.4, 0, 0.15] },
+  // Gate 1 hold, sweep-end pose, aim re-centred so the spiral begins seamlessly.
   { at: GATE1_OFFSET, pos: [1.05, 0.05, 1.05], lookAt: [0, 0, 0] },
 
   // --- Scene 5 (electron transport chain) waypoints, after the spiral ---
@@ -44,26 +44,30 @@ const WAYPOINTS = [
   // hand-off): floating in the matrix.
   { at: SPIRAL_END, pos: [0.672, 0, 0.672], lookAt: [0, 0, 0] },
   // Turn from the matrix centre to face the inner-membrane wall (matrix side).
-  { at: 0.579, pos: [0.1, 0.2, 0.15], lookAt: [-0.3, 0, 0.6] },
+  { at: 0.51, pos: [0.1, 0.2, 0.15], lookAt: [-0.3, 0, 0.6] },
   // Establish: at the left end of the station row, looking at the first pumper.
-  { at: 0.614, pos: [-1.05, 0.22, 0.08], lookAt: [-0.6, 0, 0.62] },
+  { at: 0.54, pos: [-1.05, 0.22, 0.08], lookAt: [-0.6, 0, 0.62] },
   // Track along the row to the middle pumper.
-  { at: 0.648, pos: [0.1, 0.18, 0.12], lookAt: [0.3, 0, 0.78] },
+  { at: 0.57, pos: [0.1, 0.18, 0.12], lookAt: [0.3, 0, 0.78] },
   // Track to the far pumper at the end of the row (end of the part-one track).
-  { at: 0.682, pos: [0.85, 0.16, 0.1], lookAt: [0.95, 0, 0.62] },
+  { at: 0.6, pos: [0.85, 0.16, 0.1], lookAt: [0.95, 0, 0.62] },
   // Complex II beat: swing back to the odd-one-out (x = -0.3) and...
-  { at: 0.761, pos: [-0.95, 0.18, 0.12], lookAt: [-0.3, -0.05, 0.72] },
+  { at: 0.67, pos: [-0.95, 0.18, 0.12], lookAt: [-0.3, -0.05, 0.72] },
   // ...hold, so the side entry and the absence of pumping are readable.
-  { at: 0.818, pos: [-0.8, 0.12, 0.13], lookAt: [-0.3, -0.05, 0.74] },
+  { at: 0.72, pos: [-0.8, 0.12, 0.13], lookAt: [-0.3, -0.05, 0.74] },
 
-  // --- Scene 6 (ATP synthase, the climax) — orbit then hero push-in ---
+  // --- Scene 6 (ATP synthase, the climax) ---
   // The motor sits at the front-centre of the inner wall; its spinning head is
   // in the matrix around (0, 0, 0.5). Turn from Complex II toward it.
-  { at: 0.86, pos: [-0.6, 0.0, -0.1], lookAt: [0, 0, 0.5] },
-  // Slow orbit around the motor (right side)...
-  { at: 0.91, pos: [0.65, 0.1, 0.0], lookAt: [0, 0, 0.5] },
-  // ...continuing the orbit (lower left).
-  { at: 0.96, pos: [-0.4, -0.2, 0.05], lookAt: [0, 0, 0.5] },
+  { at: 0.77, pos: [-0.6, 0.0, -0.1], lookAt: [0, 0, 0.5] },
+  // Slow orbit around the motor; the minting is established and ATP is named.
+  { at: 0.81, pos: [0.5, 0.1, 0.0], lookAt: [0, 0, 0.5] },
+  // ATP side journey: swing RIGHT to the explainer molecule (a clear area).
+  { at: 0.855, pos: [1.1, 0.05, -0.15], lookAt: [1.18, 0.0, 0.42] },
+  // ...and hold on it while the charge, spend, recharge loop plays.
+  { at: 0.9, pos: [1.16, 0.02, -0.12], lookAt: [1.2, 0.0, 0.42] },
+  // Swing back to the motor so the minting climax still lands.
+  { at: 0.95, pos: [0.3, -0.05, 0.0], lookAt: [0, 0, 0.5] },
   // Hero push-in on the head, where the gold ATP coins pop out toward the viewer.
   { at: 1.0, pos: [0.05, -0.02, 0.12], lookAt: [0, -0.02, 0.5] },
 ]

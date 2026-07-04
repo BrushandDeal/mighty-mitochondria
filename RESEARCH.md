@@ -20,6 +20,13 @@ Why this source: it is authoritative, free to the public, and legally clean (pos
 
 - ATP (adenosine triphosphate) is the cell's main energy currency. [Source: Molecular Biology of the Cell, 4th ed. https://www.ncbi.nlm.nih.gov/books/NBK21054/]
 
+- ATP's structure is a core called adenosine (the base adenine joined to a ribose sugar) plus a tail of three phosphate groups bonded in a row. The "tri" in triphosphate refers to those three phosphates. [Source: Physiology, Adenosine Triphosphate, StatPearls, NCBI Bookshelf. https://www.ncbi.nlm.nih.gov/books/NBK553175/ ; Molecular Biology of the Cell, 4th ed. https://www.ncbi.nlm.nih.gov/books/NBK21054/]
+
+- ATP releases usable energy when its outermost phosphate is split off, a reaction called hydrolysis (splitting by adding water) that turns ATP into ADP (adenosine diphosphate, two phosphates) plus one free inorganic phosphate. [Source: Physiology, Adenosine Triphosphate, StatPearls, NCBI Bookshelf. https://www.ncbi.nlm.nih.gov/books/NBK553175/ ; Molecular Biology of the Cell, 4th ed. https://www.ncbi.nlm.nih.gov/books/NBK21054/]
+  - Honesty note for copy: do not say "energy is stored in the high-energy bond and released when the bond breaks," which is standard shorthand but imprecise (breaking a bond on its own costs energy; the net energy comes from the reaction settling into more stable products). Say "energy is released when ATP is split into ADP plus phosphate."
+
+- The ATP/ADP cycle is reversible: adding a phosphate back onto ADP, using energy from food, regenerates ATP. In the mitochondrion this recharge step is run by ATP synthase, which is exactly the reaction Scene 6 depicts. [Source: Physiology, Adenosine Triphosphate, StatPearls, NCBI Bookshelf. https://www.ncbi.nlm.nih.gov/books/NBK553175/ ; Molecular Biology of the Cell, 4th ed. https://www.ncbi.nlm.nih.gov/books/NBK21054/]
+
 - Mitochondria do not create energy. They release the chemical energy already stored in the bonds of food molecules and repackage it into ATP, a form the cell can spend. [Source: Molecular Biology of the Cell, 4th ed. https://www.ncbi.nlm.nih.gov/books/NBK21054/]
 
 - The first stage of extracting energy from glucose is glycolysis, and it happens in the cytoplasm, outside the mitochondrion, before anything reaches the organelle. Glycolysis yields only about 2 ATP per glucose. [Source: Molecular Biology of the Cell, 4th ed. https://www.ncbi.nlm.nih.gov/books/NBK21054/]
