@@ -15,10 +15,10 @@ import { GATE1_OFFSET } from './journeyRanges.js'
  * <Canvas> is the 3D drawing surface that fills the browser window. Everything
  * inside it is 3D. The <div> text overlays sit on top in plain HTML.
  *
- * <ScrollControls pages={15}> makes the page fifteen screens tall so there is
+ * <ScrollControls pages={18}> makes the page eighteen screens tall so there is
  * room for the whole journey so far: overview -> membrane -> inside to the
  * cristae -> Quiz Gate 1 -> the spiral dive into the matrix -> the electron
- * transport chain. CameraRig reads that scroll and moves the camera.
+ * transport chain (incl. the Complex II beat). CameraRig moves the camera.
  *
  * To add the next JOURNEY.md scene, create a component in /scenes, drop it in
  * beside the others, add a camera waypoint, and lengthen `pages` if needed.
@@ -70,20 +70,21 @@ function OverlayController({
   const scroll = useScroll()
   useFrame(() => {
     const o = scroll.offset
-    // Scene 0 title: fully visible at the top, gone by 7% down.
+    // (All thresholds were scaled by 15/18 when the Complex II beat was added.)
+    // Scene 0 title: fully visible at the top, fades out early.
     if (titleRef.current) {
-      titleRef.current.style.opacity = String(1 - clamp01(o / 0.07))
+      titleRef.current.style.opacity = String(1 - clamp01(o / 0.058))
     }
     // Scene 2 copy: fades in at the membrane, back out as we slip inside.
     if (scene2Ref.current) {
-      const inAmount = clamp01((o - 0.22) / 0.04)
-      const outAmount = 1 - clamp01((o - 0.3) / 0.04)
+      const inAmount = clamp01((o - 0.183) / 0.033)
+      const outAmount = 1 - clamp01((o - 0.25) / 0.033)
       scene2Ref.current.style.opacity = String(inAmount * outAmount)
     }
     // Scene 3 copy: fades in during the fold sweep, out as we reach the gate.
     if (scene3Ref.current) {
-      const inAmount = clamp01((o - 0.4) / 0.04)
-      const outAmount = 1 - clamp01((o - 0.46) / 0.03)
+      const inAmount = clamp01((o - 0.333) / 0.033)
+      const outAmount = 1 - clamp01((o - 0.383) / 0.025)
       scene3Ref.current.style.opacity = String(inAmount * outAmount)
     }
     // Quiz card: the question shows once we reach the gate. After it is passed,
@@ -91,27 +92,28 @@ function OverlayController({
     // Pointer-events are only on while the question is up, so the card never
     // blocks scrolling once answered (and hidden buttons can't click).
     if (gateRef.current) {
-      const nearGate = o > 0.46
-      const show = gatePassed ? (nearGate && o < 0.58 ? 1 : 0) : nearGate ? 1 : 0
+      const nearGate = o > 0.383
+      const show = gatePassed ? (nearGate && o < 0.483 ? 1 : 0) : nearGate ? 1 : 0
       gateRef.current.style.opacity = String(show)
       gateRef.current.style.pointerEvents = show && !gatePassed ? 'auto' : 'none'
     }
     // Scene 4 copy: fades in during the matrix float, out before Scene 5.
     if (scene4Ref.current) {
-      const inAmount = clamp01((o - 0.73) / 0.03)
-      const outAmount = 1 - clamp01((o - 0.78) / 0.03)
+      const inAmount = clamp01((o - 0.608) / 0.025)
+      const outAmount = 1 - clamp01((o - 0.65) / 0.025)
       scene4Ref.current.style.opacity = String(inAmount * outAmount)
     }
-    // Scene 5 copy: fades in as we track along the stations.
+    // Scene 5 copy: fades in as we track along the stations, and stays up through
+    // the Complex II beat (the copy covers both parts).
     if (scene5Ref.current) {
-      scene5Ref.current.style.opacity = String(clamp01((o - 0.88) / 0.04))
+      scene5Ref.current.style.opacity = String(clamp01((o - 0.733) / 0.033))
     }
     // Charge meter: fades in with Scene 5; its fill climbs as charge builds.
     if (meterRef.current) {
-      meterRef.current.style.opacity = String(clamp01((o - 0.81) / 0.04))
+      meterRef.current.style.opacity = String(clamp01((o - 0.675) / 0.033))
     }
     if (meterFillRef.current) {
-      meterFillRef.current.style.height = `${clamp01((o - 0.84) / 0.14) * 100}%`
+      meterFillRef.current.style.height = `${clamp01((o - 0.7) / 0.117) * 100}%`
     }
   })
   return null
@@ -194,7 +196,7 @@ export default function App() {
         <ambientLight intensity={0.2} />
         <directionalLight position={[5, 5, 5]} intensity={0.5} color="#8fbfff" />
 
-        <ScrollControls pages={15} damping={0.3}>
+        <ScrollControls pages={18} damping={0.3}>
           <CameraRig />
           <MitochondrionScene />
           <OuterMembraneScene />
@@ -274,10 +276,13 @@ export default function App() {
         </p>
       </div>
 
-      {/* Scene 5 copy, PART ONE (JOURNEY.md Scene 5, verbatim first portion).
-          Traces to RESEARCH.md Part A: the chain pumps protons from the matrix
-          into the intermembrane space; the gradient is a real voltage, not just
-          a pile-up; the sealed membrane behaves like a charged battery. */}
+      {/* Scene 5 copy (JOURNEY.md Scene 5, verbatim). PART ONE traces to
+          RESEARCH.md Part A: the chain pumps protons from the matrix into the
+          intermembrane space; the gradient is a real voltage, not just a pile-up;
+          the sealed membrane behaves like a charged battery. PART TWO traces to:
+          Complex II takes part in the chain but pumps no protons; it is a second
+          entry point for electrons from the citric acid cycle, bypassing Complex
+          I, so it drives less ATP. */}
       <div ref={scene5Ref} style={{ ...overlayBase, opacity: 0 }}>
         <p style={copyStyle}>
           Now the main event. Those electron carriers dump their cargo into a
@@ -287,7 +292,10 @@ export default function App() {
           that trips people: protons aren&rsquo;t water. Each one is a naked
           positive charge. So you&rsquo;re not just piling stuff up, you&rsquo;re
           peeling positive away from negative and building a voltage. The sealed
-          membrane is charging like a battery.
+          membrane is charging like a battery. And watch this one station: an
+          electron slips in a side door and passes right through without pumping
+          anything. Fuel that enters here drives less energy than fuel that takes
+          the main road. Not every step pulls the same weight.
         </p>
       </div>
 

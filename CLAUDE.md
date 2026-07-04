@@ -91,17 +91,20 @@ current code already honours the OS `prefers-reduced-motion` setting via
   cool glowing circular mtDNA loop + drifting enzyme/ribosome specks + a MUTED
   warm haze (deliberately not vivid gold, to protect the ATP-synthase payoff).
   Reached via the spiral dive in `CameraRig.jsx`.
-- **Scene 5 (electron transport chain) — PART ONE done; part two pending.**
-  `scenes/ElectronTransportChainScene.jsx` = three cyan pumping stations (I, III,
-  IV) with a deliberate GAP for Complex II; GOLD electrons hopping; VIOLET protons
-  pumped matrix -> intermembrane space only; a numberless "Charge" meter (in
-  App.jsx). This is the site's first use of gold (energy) and violet (protons).
-  **Part two (not built):** the Complex II "odd one out" beat — a fourth,
-  non-pumping station fed by a side-entry electron from the matrix, with a camera
-  swing onto it. Fill the reserved gap at x = -0.3 in that session.
+- **Scene 5 (electron transport chain) — DONE (both parts).**
+  `scenes/ElectronTransportChainScene.jsx`. Part one: three cyan pumping stations
+  (I, III, IV); GOLD electrons hopping; VIOLET protons pumped matrix ->
+  intermembrane space only; a numberless "Charge" meter (in App.jsx). Part two:
+  Complex II in the gap at x = -0.3 — a distinct faceted muted-teal shape whose
+  GOLD electron rises from the MATRIX side (not down the row) and which pumps NO
+  proton; the camera swings onto it and holds. First use of gold (energy), violet
+  (protons), and teal (the odd-one-out).
 - **The inner membrane no longer spins** (needed a fixed orientation for Scene 5's
   stations). The bean + pores still spin in their own scenes, so the cold open
-  stays alive. `ScrollControls pages` is 15.
+  stays alive. `ScrollControls pages` is 18. NOTE: adding a scene at the end
+  re-spaces every scroll constant by a uniform factor (all offsets in CameraRig,
+  journeyRanges, App overlays, and the ETC scene's presence/charge) — keep them
+  in sync or scenes drift out of alignment.
 - **Known-rough / deferred polish:** the interior 3D (cristae, inner membrane,
   matrix, ETC stations) is placeholder-quality; spiral/matrix framing tuned per
   owner feedback but still want real polish. Deferred: true bloom, higher-fidelity
