@@ -1,9 +1,9 @@
-import { useMemo, useEffect } from 'react'
+import { useMemo, useEffect, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { useScroll } from '@react-three/drei'
 import { MeshStandardMaterial } from 'three'
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion.js'
-import { matrixFactor } from '../journeyRanges.js'
+import { interiorFactor, matrixFactor } from '../journeyRanges.js'
 
 /*
  * InnerMembraneScene — JOURNEY.md Scene 3, "inner membrane & cristae (the folds)".
@@ -41,6 +41,11 @@ const CRISTAE_COUNT = 13
 export function InnerMembraneScene() {
   const scroll = useScroll()
   const prefersReducedMotion = usePrefersReducedMotion()
+
+  // Refs so the sealed shell's material and the interior light can be faded in
+  // per frame, the same way the shared cristae material already is.
+  const shellMatRef = useRef(null)
+  const lightRef = useRef(null)
 
   // One shared material for all the folds, so the cool "shimmer" (a slow pulse
   // of the glow) is unified and cheap. Disposed on unmount to free GPU memory.
@@ -87,9 +92,19 @@ export function InnerMembraneScene() {
       cristaeMat.emissiveIntensity = 0.5 + 0.15 * Math.sin(t * 1.2)
     }
 
-    // Dim the folds to a backdrop once we dive into the matrix, so the matrix
-    // contents read clearly. They stay faintly visible, framing the space.
-    cristaeMat.opacity = 0.75 * (1 - 0.55 * matrixFactor(scroll.offset))
+    // Fade the whole interior IN over the same stretch the outer membrane fades
+    // OUT (interiorFactor), so nothing pops on at the opening: the interior
+    // resolves in as a clean crossfade while we cross the membrane. Base values
+    // are unchanged once interior === 1 (from the membrane pass onward).
+    const o = scroll.offset
+    const interior = interiorFactor(o)
+    // Discs: fade in with the interior, and still dim to a backdrop on the matrix
+    // dive so the matrix contents read clearly.
+    cristaeMat.opacity = 0.75 * interior * (1 - 0.55 * matrixFactor(o))
+    // Sealed shell: fade in with the interior (base 0.18 held at full interior).
+    if (shellMatRef.current) shellMatRef.current.opacity = 0.18 * interior
+    // Interior light: fade in with the interior (base 3 held at full interior).
+    if (lightRef.current) lightRef.current.intensity = 3 * interior
   })
 
   return (
@@ -99,6 +114,7 @@ export function InnerMembraneScene() {
       <mesh scale={[IA, IB, IC]}>
         <sphereGeometry args={[1, 64, 48]} />
         <meshStandardMaterial
+          ref={shellMatRef}
           color={CYAN}
           emissive={CYAN}
           emissiveIntensity={0.15}
@@ -125,8 +141,8 @@ export function InnerMembraneScene() {
       ))}
 
       {/* A soft cyan light inside so the folds have form once the warm outer
-          light has faded away on entry. */}
-      <pointLight color={CYAN} intensity={3} distance={8} decay={2} />
+          light has faded away on entry. Fades in with the rest of the interior. */}
+      <pointLight ref={lightRef} color={CYAN} intensity={3} distance={8} decay={2} />
     </group>
   )
 }
