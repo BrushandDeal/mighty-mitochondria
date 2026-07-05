@@ -9,8 +9,9 @@ import { MatrixScene } from './scenes/MatrixScene.jsx'
 import { ElectronTransportChainScene } from './scenes/ElectronTransportChainScene.jsx'
 import { AtpSynthaseScene } from './scenes/AtpSynthaseScene.jsx'
 import { HeartTissueScene } from './scenes/HeartTissueScene.jsx'
+import { BiggerStoryScene } from './scenes/BiggerStoryScene.jsx'
 import { QuizGate } from './QuizGate.jsx'
-import { GATE1_OFFSET, GATE2_OFFSET, TOTAL_PAGES, page } from './journeyRanges.js'
+import { GATE1_OFFSET, GATE2_OFFSET, GATE3_OFFSET, TOTAL_PAGES, page } from './journeyRanges.js'
 
 /*
  * App — the whole site's stage.
@@ -71,11 +72,17 @@ function OverlayController({
   scene5Ref,
   scene6Ref,
   scene7Ref,
+  story1Ref,
+  story2Ref,
+  story3Ref,
+  story4Ref,
   detourRef,
   gate1Ref,
   gate1Passed,
   gate2Ref,
   gate2Passed,
+  gate3Ref,
+  gate3Passed,
   meterRef,
   meterFillRef,
   meterElectricRef,
@@ -148,9 +155,42 @@ function OverlayController({
       detourRef.current.style.opacity = String(inAmount * outAmount)
     }
     // Scene 7 copy: fades in as the outward spiral settles into the heart tissue,
-    // then holds to the end of the ride.
+    // then fades back out as the camera drifts off to the Scene 8 constellation.
     if (scene7Ref.current) {
-      scene7Ref.current.style.opacity = String(clamp01((o - page(22.3)) / page(0.5)))
+      const inAmount = clamp01((o - page(22.3)) / page(0.5))
+      const outAmount = 1 - clamp01((o - page(24.4)) / page(0.6))
+      scene7Ref.current.style.opacity = String(inAmount * outAmount)
+    }
+    // Scene 8 cards: one calm beat per node, each fading in as we reach its node
+    // and back out before the next. Windows pinned to page numbers.
+    if (story1Ref.current) {
+      const inAmount = clamp01((o - page(24.8)) / page(0.4))
+      const outAmount = 1 - clamp01((o - page(26.0)) / page(0.4))
+      story1Ref.current.style.opacity = String(inAmount * outAmount)
+    }
+    if (story2Ref.current) {
+      const inAmount = clamp01((o - page(26.3)) / page(0.4))
+      const outAmount = 1 - clamp01((o - page(27.5)) / page(0.4))
+      story2Ref.current.style.opacity = String(inAmount * outAmount)
+    }
+    if (story3Ref.current) {
+      const inAmount = clamp01((o - page(27.8)) / page(0.4))
+      const outAmount = 1 - clamp01((o - page(29.0)) / page(0.4))
+      story3Ref.current.style.opacity = String(inAmount * outAmount)
+    }
+    if (story4Ref.current) {
+      const inAmount = clamp01((o - page(29.3)) / page(0.4))
+      const outAmount = 1 - clamp01((o - page(30.2)) / page(0.4))
+      story4Ref.current.style.opacity = String(inAmount * outAmount)
+    }
+    // Quiz Gate 3 card: same mechanic as Gates 1 and 2. Shows at the last node
+    // (just before the lock at page 31); after it is passed it briefly reads
+    // "Correct", then fades as the camera drifts on toward the frontier.
+    if (gate3Ref.current) {
+      const nearGate3 = o > page(30.6)
+      const show = gate3Passed ? (nearGate3 && o < page(32.2) ? 1 : 0) : nearGate3 ? 1 : 0
+      gate3Ref.current.style.opacity = String(show)
+      gate3Ref.current.style.pointerEvents = show && !gate3Passed ? 'auto' : 'none'
     }
     // Charge meter: fades in with Scene 5, its fill climbs as charge builds, then
     // DISCHARGES (drops) during the Scene 6 orbit as protons flow back.
@@ -214,6 +254,17 @@ const GATE2_OPTIONS = [
   { key: 'D', label: "The mitochondrion's DNA", correct: false },
 ]
 
+// Gate 3 options (JOURNEY.md). The question asks which is NOT a mitochondrial
+// job, so the CORRECT choice is the odd one out: C, photosynthesis (a plant's
+// job). The three real jobs trace to RESEARCH.md: ATP (Part A), apoptosis via
+// cytochrome c (line 60), and heat generation (line 62).
+const GATE3_OPTIONS = [
+  { key: 'A', label: 'Producing ATP energy', correct: false },
+  { key: 'B', label: 'Helping trigger programmed cell death', correct: false },
+  { key: 'C', label: 'Photosynthesis, making sugar from sunlight', correct: true },
+  { key: 'D', label: 'Generating body heat', correct: false },
+]
+
 export default function App() {
   const titleRef = useRef(null)
   const scene2Ref = useRef(null)
@@ -222,9 +273,14 @@ export default function App() {
   const scene5Ref = useRef(null)
   const scene6Ref = useRef(null)
   const scene7Ref = useRef(null)
+  const story1Ref = useRef(null)
+  const story2Ref = useRef(null)
+  const story3Ref = useRef(null)
+  const story4Ref = useRef(null)
   const detourRef = useRef(null)
   const gate1Ref = useRef(null)
   const gate2Ref = useRef(null)
+  const gate3Ref = useRef(null)
   const meterRef = useRef(null)
   const meterFillRef = useRef(null)
   const meterElectricRef = useRef(null)
@@ -233,6 +289,8 @@ export default function App() {
   const [gate1Wrong, setGate1Wrong] = useState(false)
   const [gate2Passed, setGate2Passed] = useState(false)
   const [gate2Wrong, setGate2Wrong] = useState(false)
+  const [gate3Passed, setGate3Passed] = useState(false)
+  const [gate3Wrong, setGate3Wrong] = useState(false)
 
   const handleGate1Answer = (correct) => {
     if (correct) {
@@ -249,6 +307,15 @@ export default function App() {
       setGate2Wrong(false)
     } else {
       setGate2Wrong(true)
+    }
+  }
+
+  const handleGate3Answer = (correct) => {
+    if (correct) {
+      setGate3Passed(true)
+      setGate3Wrong(false)
+    } else {
+      setGate3Wrong(true)
     }
   }
 
@@ -275,8 +342,10 @@ export default function App() {
           <ElectronTransportChainScene />
           <AtpSynthaseScene />
           <HeartTissueScene />
+          <BiggerStoryScene />
           <GateLock passed={gate1Passed} lockOffset={GATE1_OFFSET} />
           <GateLock passed={gate2Passed} lockOffset={GATE2_OFFSET} />
+          <GateLock passed={gate3Passed} lockOffset={GATE3_OFFSET} />
           <OverlayController
             titleRef={titleRef}
             scene2Ref={scene2Ref}
@@ -285,11 +354,17 @@ export default function App() {
             scene5Ref={scene5Ref}
             scene6Ref={scene6Ref}
             scene7Ref={scene7Ref}
+            story1Ref={story1Ref}
+            story2Ref={story2Ref}
+            story3Ref={story3Ref}
+            story4Ref={story4Ref}
             detourRef={detourRef}
             gate1Ref={gate1Ref}
             gate1Passed={gate1Passed}
             gate2Ref={gate2Ref}
             gate2Passed={gate2Passed}
+            gate3Ref={gate3Ref}
+            gate3Passed={gate3Passed}
             meterRef={meterRef}
             meterFillRef={meterFillRef}
             meterElectricRef={meterElectricRef}
@@ -418,10 +493,47 @@ export default function App() {
       <div ref={scene7Ref} style={{ ...overlayBase, opacity: 0 }}>
         <p style={copyStyle}>
           So where does all that energy go? Everywhere that never stops working.
-          About a quarter of the volume of your heart-muscle cells is
-          mitochondria: a quarter of the machine is dedicated power plant. Your
-          neurons, your muscles, they&rsquo;re all hungry for the ATP you just
-          watched get minted.
+          About a quarter of your heart muscles are comprised of mitochondria: a
+          quarter of the machine is dedicated power plant. Your neurons, your
+          muscles, they&rsquo;re all hungry for the ATP you just watched get
+          minted.
+        </p>
+      </div>
+
+      {/* Scene 8 cards (JOURNEY.md Scene 8, verbatim). Still settled science, so
+          these sit before the threshold. Each traces to RESEARCH.md:
+          1) endosymbiosis / own DNA (line 56), 2) maternal inheritance, worded
+          "essentially all" not "every single one" (line 58), 3) apoptosis via
+          cytochrome c (line 60), 4) heat, calcium, hormones (line 62). */}
+      <div ref={story1Ref} style={{ ...overlayBase, opacity: 0 }}>
+        <p style={copyStyle}>
+          An ancient partnership: mitochondria were once free-living bacteria,
+          swallowed by another cell over a billion years ago. That&rsquo;s why
+          they still carry their own DNA.
+        </p>
+      </div>
+
+      <div ref={story2Ref} style={{ ...overlayBase, opacity: 0 }}>
+        <p style={copyStyle}>
+          You inherited essentially all of yours from your mother, and her mother,
+          and hers: an unbroken maternal line reaching back further than
+          you&rsquo;d believe. They were never fully yours to begin with, because
+          they started as that ancient bacterial guest.
+        </p>
+      </div>
+
+      <div ref={story3Ref} style={{ ...overlayBase, opacity: 0 }}>
+        <p style={copyStyle}>
+          They don&rsquo;t just make energy, they also decide when a cell should
+          die, releasing a signal (cytochrome c) that triggers self-destruction to
+          protect the body.
+        </p>
+      </div>
+
+      <div ref={story4Ref} style={{ ...overlayBase, opacity: 0 }}>
+        <p style={copyStyle}>
+          Beyond ATP: they generate body heat, store calcium, and help build
+          hormones.
         </p>
       </div>
 
@@ -517,6 +629,21 @@ export default function App() {
         passedNote="Correct. Keep scrolling to zoom out."
         wrongHint="Not quite. Scroll back up and watch what actually rushes through the motor and turns it."
         onAnswer={handleGate2Answer}
+      />
+
+      {/* Quiz Gate 3 (JOURNEY.md, final synthesis). Same mechanic as Gates 1 and
+          2. There is no spiral reward here: on the correct answer the lock simply
+          releases and the camera drifts forward toward the frontier (built later). */}
+      <QuizGate
+        cardRef={gate3Ref}
+        label="Quiz Gate 3"
+        question="Which of these is NOT a mitochondrial job?"
+        options={GATE3_OPTIONS}
+        passed={gate3Passed}
+        wrong={gate3Wrong}
+        passedNote="Correct. You've got the settled story. Now we head past the textbook."
+        wrongHint="Not quite. Think back over what these organelles actually do; one of these was never on the list."
+        onAnswer={handleGate3Answer}
       />
     </div>
   )

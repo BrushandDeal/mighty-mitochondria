@@ -25,9 +25,12 @@
 // ScrollControls uses it for the scroll height, and page() uses it to turn a page
 // number into a 0..1 offset. Appending a scene means raising this number.
 // 18 -> 24: added Quiz Gate 2 (page 19), the outward spiral (19 -> 22), and
-// Scene 7, the zoom out to the body (22 -> 24). Every earlier page number is
-// unchanged, so every earlier scene keeps firing at the same spot.
-export const TOTAL_PAGES = 24
+// Scene 7, the zoom out to the body (22 -> 24).
+// 24 -> 33: added Scene 8, the bigger-story constellation (pages 25 -> 30), Quiz
+// Gate 3 (page 31), and a quiet forward drift toward the frontier (31 -> 33).
+// Every earlier page number is unchanged, so every earlier scene keeps firing at
+// the same spot.
+export const TOTAL_PAGES = 33
 
 // page(n): convert an absolute page number (0 .. TOTAL_PAGES) into a scroll
 // offset (0 .. 1). Everything that pins to a scroll position routes through here.
@@ -59,6 +62,12 @@ export const GATE2_OFFSET = page(19)
 // The outward spiral runs from Gate 2 to SPIRAL2_END; after that the camera picks
 // the waypoint rail back up for Scene 7 (the heart-muscle tissue).
 export const SPIRAL2_END = page(22)
+
+// Quiz Gate 3 sits at the end of Scene 8 (the bigger-story constellation). Scroll
+// is locked here until the visitor answers correctly (C: photosynthesis is NOT a
+// mitochondrial job). The reward is not a spiral: the camera simply drifts forward
+// into open, cooler space, the hand-off toward the frontier (built later).
+export const GATE3_OFFSET = page(31)
 
 // The scroll window over which the matrix (Scene 4) fades in, only after the
 // gate, so it stays hidden until the visitor has earned the dive.

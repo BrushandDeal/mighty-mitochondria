@@ -1,7 +1,7 @@
 import { useThree, useFrame } from '@react-three/fiber'
 import { useScroll } from '@react-three/drei'
 import { Vector3 } from 'three'
-import { GATE1_OFFSET, SPIRAL_END, GATE2_OFFSET, SPIRAL2_END, page } from './journeyRanges.js'
+import { GATE1_OFFSET, SPIRAL_END, GATE2_OFFSET, SPIRAL2_END, GATE3_OFFSET, page } from './journeyRanges.js'
 
 /*
  * CameraRig — links page scrolling to camera movement.
@@ -84,6 +84,25 @@ const WAYPOINTS = [
   { at: page(23), pos: [3.6, 1.2, 9.5], lookAt: [0, 0, 0] },
   // Come to rest among the beating field of mitochondria.
   { at: page(24), pos: [2.4, 0.6, 8.0], lookAt: [0, 0, 0] },
+
+  // --- Scene 8 (the bigger story) constellation drift ---
+  // Turn away from the tissue and drift out into open dark space, gliding from
+  // one glowing node to the next. Looking +z (outward) keeps the origin content
+  // behind the camera, so the tissue falls away without needing a fade-out. Each
+  // camera pose sits just in front of its node (node.z minus 4) looking at it.
+  { at: page(25.2), pos: [-3, 0.8, 16], lookAt: [-3, 0.8, 20] }, // node 1: ancient partnership
+  { at: page(26.7), pos: [3, -0.4, 22], lookAt: [3, -0.4, 26] }, // node 2: maternal inheritance
+  { at: page(28.2), pos: [-2.5, 0.9, 28], lookAt: [-2.5, 0.9, 32] }, // node 3: cell death (cytochrome c)
+  { at: page(29.7), pos: [2.8, -0.2, 34], lookAt: [2.8, -0.2, 38] }, // node 4: beyond ATP
+
+  // --- Quiz Gate 3 hold ---
+  // Hold gently on the last node while the question is up (lock is at page 31).
+  { at: GATE3_OFFSET, pos: [2.8, -0.2, 35.4], lookAt: [2.8, -0.2, 38] },
+
+  // --- Frontier hand-off (Gate 3 reward) ---
+  // On a correct answer, drift forward into open, cooler, empty space: the
+  // approach to the threshold (built later). No spiral; just a quiet push onward.
+  { at: page(33), pos: [0.6, 0.3, 44], lookAt: [0.6, 0.3, 52] },
 ]
 
 // Linear interpolation and eased helpers.
