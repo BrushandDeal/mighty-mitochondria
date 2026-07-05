@@ -111,6 +111,7 @@ function ScrollElCapture({ elRef }) {
  */
 function OverlayController({
   titleRef,
+  scene1Ref,
   scene2Ref,
   scene3Ref,
   scene4Ref,
@@ -147,6 +148,13 @@ function OverlayController({
     // Scene 0 title: fully visible at the top, fades out early.
     if (titleRef.current) {
       titleRef.current.style.opacity = String(1 - clamp01(o / page(0.738))) // was o / 0.041
+    }
+    // Scene 1 copy: fades in as the camera dollies in (its beat is at page 1.296),
+    // out again before Scene 2 begins at page 2.376.
+    if (scene1Ref.current) {
+      const inAmount = clamp01((o - page(0.9)) / page(0.4))
+      const outAmount = 1 - clamp01((o - page(1.9)) / page(0.4))
+      scene1Ref.current.style.opacity = String(inAmount * outAmount)
     }
     // Scene 2 copy: fades in at the membrane, back out as we slip inside.
     if (scene2Ref.current) {
@@ -351,6 +359,7 @@ const GATE3_OPTIONS = [
 
 export default function App() {
   const titleRef = useRef(null)
+  const scene1Ref = useRef(null)
   const scene2Ref = useRef(null)
   const scene3Ref = useRef(null)
   const scene4Ref = useRef(null)
@@ -450,6 +459,7 @@ export default function App() {
           <GateLock passed={gate3Passed} lockOffset={GATE3_OFFSET} />
           <OverlayController
             titleRef={titleRef}
+            scene1Ref={scene1Ref}
             scene2Ref={scene2Ref}
             scene3Ref={scene3Ref}
             scene4Ref={scene4Ref}
@@ -498,6 +508,24 @@ export default function App() {
           }}
         >
           Scroll to begin the descent
+        </p>
+      </div>
+
+      {/* Scene 1 copy (JOURNEY.md Scene 1, verbatim). Traces to RESEARCH.md:
+          energy is unlocked and repackaged (not made from nothing); the count is
+          floor-framed into quadrillions with no exact total; cyanide kills in
+          minutes by jamming this machine. */}
+      <div ref={scene1Ref} style={{ ...overlayBase, opacity: 0 }}>
+        <p style={copyStyle}>
+          This is a mitochondrion, an organelle inside almost every cell in your
+          body. It has one famous job: it doesn&rsquo;t make energy from nothing,
+          it unlocks the energy already stored in the food you&rsquo;ve eaten and
+          repackages it into a form your cells can actually spend. You carry an
+          astonishing number of them: at least hundreds in a busy cell, tens of
+          trillions of cells in you, which stacks up into quadrillions. Nobody has
+          an exact count. Sabotage them and death comes fast: that is
+          exactly how cyanide kills, by jamming this machine so the body simply
+          runs out of power.
         </p>
       </div>
 
