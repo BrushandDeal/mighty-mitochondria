@@ -8,7 +8,7 @@ import { InnerMembraneScene } from './scenes/InnerMembraneScene.jsx'
 import { MatrixScene } from './scenes/MatrixScene.jsx'
 import { ElectronTransportChainScene } from './scenes/ElectronTransportChainScene.jsx'
 import { AtpSynthaseScene } from './scenes/AtpSynthaseScene.jsx'
-import { GATE1_OFFSET } from './journeyRanges.js'
+import { GATE1_OFFSET, TOTAL_PAGES, page } from './journeyRanges.js'
 
 /*
  * App — the whole site's stage.
@@ -16,13 +16,16 @@ import { GATE1_OFFSET } from './journeyRanges.js'
  * <Canvas> is the 3D drawing surface that fills the browser window. Everything
  * inside it is 3D. The <div> text overlays sit on top in plain HTML.
  *
- * <ScrollControls pages={25}> makes the page twenty-five screens tall so there is
- * room for the whole journey so far: overview, membrane, inside to the cristae,
- * Quiz Gate 1, the spiral dive into the matrix, the electron transport chain, and
- * ATP synthase with its "what is ATP" side journey. CameraRig moves the camera.
+ * <ScrollControls pages={TOTAL_PAGES}> makes the page TOTAL_PAGES screens tall so
+ * there is room for the whole journey so far: overview, membrane, inside to the
+ * cristae, Quiz Gate 1, the spiral dive into the matrix, the electron transport
+ * chain, and ATP synthase with its "what is ATP" side journey. CameraRig moves
+ * the camera. Every firing point below is pinned to a page number via page()
+ * (see journeyRanges.js), so scene timings are stable as pages are added.
  *
  * To add the next JOURNEY.md scene, create a component in /scenes, drop it in
- * beside the others, add a camera waypoint, and lengthen `pages` if needed.
+ * beside the others, add a camera waypoint at its page number, and raise
+ * TOTAL_PAGES so the new scene has room. Earlier page numbers stay put.
  */
 
 const SPACE = '#05060a' // the dark "cytoplasm" background
@@ -74,22 +77,23 @@ function OverlayController({
   const scroll = useScroll()
   useFrame(() => {
     const o = scroll.offset
-    // (Thresholds for Scenes 0 to 5 were scaled by 22/25 when the ATP side
-    // journey was added; Scene 6 timings were re-laid for the detour.)
+    // Every threshold below is pinned to a page number via page() (see
+    // journeyRanges.js), so these firing points stay put as pages are added. The
+    // trailing "// was <fraction>" on each line records the old whole-ride value.
     // Scene 0 title: fully visible at the top, fades out early.
     if (titleRef.current) {
-      titleRef.current.style.opacity = String(1 - clamp01(o / 0.041))
+      titleRef.current.style.opacity = String(1 - clamp01(o / page(0.738))) // was o / 0.041
     }
     // Scene 2 copy: fades in at the membrane, back out as we slip inside.
     if (scene2Ref.current) {
-      const inAmount = clamp01((o - 0.132) / 0.024)
-      const outAmount = 1 - clamp01((o - 0.18) / 0.024)
+      const inAmount = clamp01((o - page(2.376)) / page(0.432)) // was (o - 0.132) / 0.024
+      const outAmount = 1 - clamp01((o - page(3.24)) / page(0.432)) // was (o - 0.18) / 0.024
       scene2Ref.current.style.opacity = String(inAmount * outAmount)
     }
     // Scene 3 copy: fades in during the fold sweep, out as we reach the gate.
     if (scene3Ref.current) {
-      const inAmount = clamp01((o - 0.24) / 0.024)
-      const outAmount = 1 - clamp01((o - 0.275) / 0.018)
+      const inAmount = clamp01((o - page(4.32)) / page(0.432)) // was (o - 0.24) / 0.024
+      const outAmount = 1 - clamp01((o - page(4.95)) / page(0.324)) // was (o - 0.275) / 0.018
       scene3Ref.current.style.opacity = String(inAmount * outAmount)
     }
     // Quiz card: the question shows once we reach the gate. After it is passed,
@@ -97,53 +101,53 @@ function OverlayController({
     // Pointer-events are only on while the question is up, so the card never
     // blocks scrolling once answered (and hidden buttons can't click).
     if (gateRef.current) {
-      const nearGate = o > 0.275
-      const show = gatePassed ? (nearGate && o < 0.348 ? 1 : 0) : nearGate ? 1 : 0
+      const nearGate = o > page(4.95) // was 0.275
+      const show = gatePassed ? (nearGate && o < page(6.264) ? 1 : 0) : nearGate ? 1 : 0 // was 0.348
       gateRef.current.style.opacity = String(show)
       gateRef.current.style.pointerEvents = show && !gatePassed ? 'auto' : 'none'
     }
     // Scene 4 copy: fades in during the matrix float, out before Scene 5.
     if (scene4Ref.current) {
-      const inAmount = clamp01((o - 0.437) / 0.018)
-      const outAmount = 1 - clamp01((o - 0.468) / 0.018)
+      const inAmount = clamp01((o - page(7.866)) / page(0.324)) // was (o - 0.437) / 0.018
+      const outAmount = 1 - clamp01((o - page(8.424)) / page(0.324)) // was (o - 0.468) / 0.018
       scene4Ref.current.style.opacity = String(inAmount * outAmount)
     }
     // Scene 5 copy: fades in as we track the stations, stays through the Complex
     // II beat, then fades out as ATP synthase takes over.
     if (scene5Ref.current) {
-      const inAmount = clamp01((o - 0.528) / 0.024)
-      const outAmount = 1 - clamp01((o - 0.73) / 0.026)
+      const inAmount = clamp01((o - page(9.504)) / page(0.432)) // was (o - 0.528) / 0.024
+      const outAmount = 1 - clamp01((o - page(13.14)) / page(0.468)) // was (o - 0.73) / 0.026
       scene5Ref.current.style.opacity = String(inAmount * outAmount)
     }
     // Scene 6 climax copy: fades in during the orbit (naming ATP), out as the
     // side journey begins.
     if (scene6Ref.current) {
-      const inAmount = clamp01((o - 0.74) / 0.02)
-      const outAmount = 1 - clamp01((o - 0.84) / 0.015)
+      const inAmount = clamp01((o - page(13.32)) / page(0.36)) // was (o - 0.74) / 0.02
+      const outAmount = 1 - clamp01((o - page(15.12)) / page(0.27)) // was (o - 0.84) / 0.015
       scene6Ref.current.style.opacity = String(inAmount * outAmount)
     }
     // ATP side-journey copy: fades in during the swing-right hold, out on return.
     if (detourRef.current) {
-      const inAmount = clamp01((o - 0.855) / 0.015)
-      const outAmount = 1 - clamp01((o - 0.94) / 0.012)
+      const inAmount = clamp01((o - page(15.39)) / page(0.27)) // was (o - 0.855) / 0.015
+      const outAmount = 1 - clamp01((o - page(16.92)) / page(0.216)) // was (o - 0.94) / 0.012
       detourRef.current.style.opacity = String(inAmount * outAmount)
     }
     // Charge meter: fades in with Scene 5, its fill climbs as charge builds, then
     // DISCHARGES (drops) during the Scene 6 orbit as protons flow back.
     if (meterRef.current) {
-      const meterIn = clamp01((o - 0.486) / 0.024)
-      const meterOut = 1 - clamp01((o - 0.97) / 0.02)
+      const meterIn = clamp01((o - page(8.748)) / page(0.432)) // was (o - 0.486) / 0.024
+      const meterOut = 1 - clamp01((o - page(17.46)) / page(0.36)) // was (o - 0.97) / 0.02
       meterRef.current.style.opacity = String(meterIn * meterOut)
     }
     if (meterFillRef.current) {
-      const build = clamp01((o - 0.504) / 0.084)
-      const discharge = clamp01((o - 0.77) / 0.085)
+      const build = clamp01((o - page(9.072)) / page(1.512)) // was (o - 0.504) / 0.084
+      const discharge = clamp01((o - page(13.86)) / page(1.53)) // was (o - 0.77) / 0.085
       meterFillRef.current.style.height = `${build * (1 - discharge) * 100}%`
     }
-    // Electricity: visible only while the bar is actively draining (0.77 to
-    // 0.855), so the crackle reads as the stored charge being spent.
+    // Electricity: visible only while the bar is actively draining (page 13.86 to
+    // 15.39, was 0.77 to 0.855), so the crackle reads as the stored charge spent.
     if (meterElectricRef.current) {
-      const active = clamp01((o - 0.77) / 0.02) * (1 - clamp01((o - 0.855) / 0.02))
+      const active = clamp01((o - page(13.86)) / page(0.36)) * (1 - clamp01((o - page(15.39)) / page(0.36))) // was (o - 0.77) / 0.02 and (o - 0.855) / 0.02
       meterElectricRef.current.style.opacity = String(active)
     }
   })
@@ -230,7 +234,7 @@ export default function App() {
         <ambientLight intensity={0.2} />
         <directionalLight position={[5, 5, 5]} intensity={0.5} color="#8fbfff" />
 
-        <ScrollControls pages={18} damping={0.3}>
+        <ScrollControls pages={TOTAL_PAGES} damping={0.3}>
           <CameraRig />
           <MitochondrionScene />
           <OuterMembraneScene />
