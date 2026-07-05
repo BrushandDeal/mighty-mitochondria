@@ -110,3 +110,14 @@ body {
     color: #cfe9ef;
   }
 }
+
+/* On phone-width screens the Scene 6 charge meter (pinned to the right edge,
+   vertically centred) collides with the copy text, which wraps tall and fills the
+   width there. The meter is a qualitative flourish, not essential, so hide it on
+   narrow screens; desktop layout is untouched. !important is needed to override
+   the meter's inline display:flex. */
+@media (max-width: 640px) {
+  .charge-meter {
+    display: none !important;
+  }
+}

@@ -753,6 +753,7 @@ export default function App() {
           off the site). Violet to match the pumped protons. */}
       <div
         ref={meterRef}
+        className="charge-meter"
         style={{
           position: 'absolute',
           right: 'clamp(16px, 4vw, 48px)',
