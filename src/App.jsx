@@ -629,7 +629,7 @@ export default function App() {
       <div ref={scene7Ref} style={{ ...overlayBase, opacity: 0 }}>
         <p style={copyStyle}>
           So where does all that energy go? Everywhere that never stops working.
-          About a quarter of your heart muscles are comprised of mitochondria: a
+          About a quarter of the volume of your heart-muscle cells is mitochondria: a
           quarter of the machine is dedicated power plant. Your neurons, your
           muscles, they&rsquo;re all hungry for the ATP you just watched get
           minted.
