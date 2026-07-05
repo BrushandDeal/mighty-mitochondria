@@ -1,7 +1,7 @@
 import { useThree, useFrame } from '@react-three/fiber'
 import { useScroll } from '@react-three/drei'
 import { Vector3 } from 'three'
-import { GATE1_OFFSET, SPIRAL_END, page } from './journeyRanges.js'
+import { GATE1_OFFSET, SPIRAL_END, GATE2_OFFSET, SPIRAL2_END, page } from './journeyRanges.js'
 
 /*
  * CameraRig — links page scrolling to camera movement.
@@ -70,6 +70,20 @@ const WAYPOINTS = [
   { at: page(17.1), pos: [0.3, -0.05, 0.0], lookAt: [0, 0, 0.5] }, // was 0.95
   // Hero push-in on the head, where the gold ATP coins pop out toward the viewer.
   { at: page(18), pos: [0.05, -0.02, 0.12], lookAt: [0, -0.02, 0.5] }, // was 1.0
+
+  // --- Quiz Gate 2 hold ---
+  // Keep the hero framing while the question is up; aim re-centred to the origin
+  // so the outward spiral (which looks at origin) hands off seamlessly.
+  { at: page(19), pos: [0.05, -0.02, 0.12], lookAt: [0, 0, 0] },
+
+  // --- Scene 7 (zoom out to the body) waypoints, after the outward spiral ---
+  // Spiral-out end pose (matches the outward spiral's final position exactly for a
+  // seamless hand-off): far back, looking in at the tissue packed with mitochondria.
+  { at: SPIRAL2_END, pos: [5.384, 2.0, 12.924], lookAt: [0, 0, 0] },
+  // Settle inward, descending into the heart-muscle tissue.
+  { at: page(23), pos: [3.6, 1.2, 9.5], lookAt: [0, 0, 0] },
+  // Come to rest among the beating field of mitochondria.
+  { at: page(24), pos: [2.4, 0.6, 8.0], lookAt: [0, 0, 0] },
 ]
 
 // Linear interpolation and eased helpers.
@@ -86,6 +100,15 @@ const SPIRAL_START_RADIUS = Math.hypot(1.05, 1.05)
 const SPIRAL_SETTLE_RADIUS = 0.95 // where the float settles — kept back so the
 // matrix has breathing room rather than filling the frame
 const SPIRAL_TURNS = 1.0 // a single gentle turn, not a dizzying wind
+
+// Outward-spiral parameters (the Gate 2 reward). Same spiral effect as Gate 1 but
+// REVERSED: it starts tight at the synthase hero pose [0.05, _, 0.12] and winds
+// OUTWARD, pulling the camera far back out of the cell toward the body (Scene 7).
+// Start values match the Gate 2 hold pose so the transition is seamless.
+const SPIRAL2_START_ANGLE = Math.atan2(0.05, 0.12) // pos.x = sin(a)*r, pos.z = cos(a)*r
+const SPIRAL2_START_RADIUS = Math.hypot(0.05, 0.12)
+const SPIRAL2_END_RADIUS = 14 // far enough back that our organelle is one among many
+const SPIRAL2_TURNS = 1.0 // one gentle turn on the way out, mirroring the dive in
 
 // Scratch objects reused every frame instead of allocating new ones.
 const posTarget = new Vector3()
@@ -108,6 +131,16 @@ export function CameraRig() {
       // Wind inward on the same gentle ease, so the whole dive settles smoothly.
       const radius = lerp(SPIRAL_START_RADIUS, SPIRAL_SETTLE_RADIUS, smootherstep(u))
       const y = lerp(0.05, 0.0, u)
+      posTarget.set(Math.sin(angle) * radius, y, Math.cos(angle) * radius)
+      lookTarget.set(0, 0, 0)
+    } else if (offset >= GATE2_OFFSET && offset <= SPIRAL2_END) {
+      // --- Outward spiral: the Gate 2 reward, pulling back out toward the body ---
+      const u = clamp01((offset - GATE2_OFFSET) / (SPIRAL2_END - GATE2_OFFSET))
+      // Same easing as the dive, so the pull-back accelerates out then eases to rest.
+      const angle = SPIRAL2_START_ANGLE + smootherstep(u) * SPIRAL2_TURNS * Math.PI * 2
+      // Wind OUTWARD (radius grows) instead of inward, so the camera recedes.
+      const radius = lerp(SPIRAL2_START_RADIUS, SPIRAL2_END_RADIUS, smootherstep(u))
+      const y = lerp(-0.02, 2.0, smootherstep(u))
       posTarget.set(Math.sin(angle) * radius, y, Math.cos(angle) * radius)
       lookTarget.set(0, 0, 0)
     } else {

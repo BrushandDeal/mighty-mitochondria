@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import { useScroll } from '@react-three/drei'
 import { MeshStandardMaterial, MeshBasicMaterial, Vector3 } from 'three'
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion.js'
+import { page } from '../journeyRanges.js'
 
 /*
  * AtpSynthaseScene — JOURNEY.md Scene 6, "ATP synthase (the discharge, the
@@ -285,8 +286,9 @@ export function AtpSynthaseScene() {
   )
 
   useFrame((_state, delta) => {
-    // Scene 6 fades in as we leave the Complex II hold. (Re-spaced for pages=25.)
-    const presence = clamp01((scroll.offset - 0.73) / 0.03)
+    // Scene 6 fades in as we leave the Complex II hold. Pinned to a page number
+    // via page() so it stays anchored when TOTAL_PAGES grows.
+    const presence = clamp01((scroll.offset - page(13.14)) / page(0.54)) // was (offset - 0.73) / 0.03
 
     structureMat.opacity = presence
     protonMat.opacity = presence
@@ -357,7 +359,8 @@ export function AtpSynthaseScene() {
     // --- ATP side journey: charge, spend, recharge loop ---
     // Visible only during the swing-right hold (so it never clutters the climax).
     const dPres =
-      clamp01((scroll.offset - 0.845) / 0.015) * (1 - clamp01((scroll.offset - 0.95) / 0.015))
+      clamp01((scroll.offset - page(15.21)) / page(0.27)) *
+      (1 - clamp01((scroll.offset - page(17.1)) / page(0.27))) // was 0.845/0.015 and 0.95/0.015
 
     const dp = (t * DETOUR_SPEED) % 1
     let charged // 1 as ATP (three beads, gold on), 0 as ADP (two beads, dim)

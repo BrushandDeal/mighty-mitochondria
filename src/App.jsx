@@ -8,7 +8,9 @@ import { InnerMembraneScene } from './scenes/InnerMembraneScene.jsx'
 import { MatrixScene } from './scenes/MatrixScene.jsx'
 import { ElectronTransportChainScene } from './scenes/ElectronTransportChainScene.jsx'
 import { AtpSynthaseScene } from './scenes/AtpSynthaseScene.jsx'
-import { GATE1_OFFSET, TOTAL_PAGES, page } from './journeyRanges.js'
+import { HeartTissueScene } from './scenes/HeartTissueScene.jsx'
+import { QuizGate } from './QuizGate.jsx'
+import { GATE1_OFFSET, GATE2_OFFSET, TOTAL_PAGES, page } from './journeyRanges.js'
 
 /*
  * App — the whole site's stage.
@@ -33,13 +35,14 @@ const SPACE = '#05060a' // the dark "cytoplasm" background
 const clamp01 = (v) => Math.min(1, Math.max(0, v))
 
 /*
- * GateLock — blocks forward scroll at Quiz Gate 1 until it is answered.
+ * GateLock — blocks forward scroll at a quiz gate until it is answered.
  *
- * While locked, if the scroll goes past the gate line it is gently pinned back,
- * so you can still scroll UP to re-examine the folds (as the hint suggests) but
- * cannot pass DOWN until you answer correctly.
+ * While locked, if the scroll goes past the gate line (`lockOffset`) it is gently
+ * pinned back, so you can still scroll UP to re-examine the previous scene (as the
+ * hint suggests) but cannot pass DOWN until you answer correctly. One instance per
+ * gate, each pointed at its own offset.
  */
-function GateLock({ passed }) {
+function GateLock({ passed, lockOffset }) {
   const scroll = useScroll()
   useFrame(() => {
     if (passed) return
@@ -47,7 +50,7 @@ function GateLock({ passed }) {
     if (!el) return
     const maxScroll = el.scrollHeight - el.clientHeight
     if (maxScroll <= 0) return
-    const gateScroll = GATE1_OFFSET * maxScroll
+    const gateScroll = lockOffset * maxScroll
     if (el.scrollTop > gateScroll) el.scrollTop = gateScroll
   })
   return null
@@ -67,9 +70,12 @@ function OverlayController({
   scene4Ref,
   scene5Ref,
   scene6Ref,
+  scene7Ref,
   detourRef,
-  gateRef,
-  gatePassed,
+  gate1Ref,
+  gate1Passed,
+  gate2Ref,
+  gate2Passed,
   meterRef,
   meterFillRef,
   meterElectricRef,
@@ -100,11 +106,20 @@ function OverlayController({
     // the card briefly becomes a "Correct" note, then fades as we spiral away.
     // Pointer-events are only on while the question is up, so the card never
     // blocks scrolling once answered (and hidden buttons can't click).
-    if (gateRef.current) {
+    if (gate1Ref.current) {
       const nearGate = o > page(4.95) // was 0.275
-      const show = gatePassed ? (nearGate && o < page(6.264) ? 1 : 0) : nearGate ? 1 : 0 // was 0.348
-      gateRef.current.style.opacity = String(show)
-      gateRef.current.style.pointerEvents = show && !gatePassed ? 'auto' : 'none'
+      const show = gate1Passed ? (nearGate && o < page(6.264) ? 1 : 0) : nearGate ? 1 : 0 // was 0.348
+      gate1Ref.current.style.opacity = String(show)
+      gate1Ref.current.style.pointerEvents = show && !gate1Passed ? 'auto' : 'none'
+    }
+    // Quiz Gate 2 card: same mechanic as Gate 1. Shows as we reach the end of the
+    // Scene 6 climax (just before the lock at page 19); after it is passed, it
+    // briefly reads "Correct", then fades as the outward spiral (to page 22) plays.
+    if (gate2Ref.current) {
+      const nearGate2 = o > page(18.5)
+      const show = gate2Passed ? (nearGate2 && o < page(20) ? 1 : 0) : nearGate2 ? 1 : 0
+      gate2Ref.current.style.opacity = String(show)
+      gate2Ref.current.style.pointerEvents = show && !gate2Passed ? 'auto' : 'none'
     }
     // Scene 4 copy: fades in during the matrix float, out before Scene 5.
     if (scene4Ref.current) {
@@ -131,6 +146,11 @@ function OverlayController({
       const inAmount = clamp01((o - page(15.39)) / page(0.27)) // was (o - 0.855) / 0.015
       const outAmount = 1 - clamp01((o - page(16.92)) / page(0.216)) // was (o - 0.94) / 0.012
       detourRef.current.style.opacity = String(inAmount * outAmount)
+    }
+    // Scene 7 copy: fades in as the outward spiral settles into the heart tissue,
+    // then holds to the end of the ride.
+    if (scene7Ref.current) {
+      scene7Ref.current.style.opacity = String(clamp01((o - page(22.3)) / page(0.5)))
     }
     // Charge meter: fades in with Scene 5, its fill climbs as charge builds, then
     // DISCHARGES (drops) during the Scene 6 orbit as protons flow back.
@@ -175,7 +195,8 @@ const copyStyle = {
   lineHeight: 1.5,
 }
 
-// The four quiz options. Only B is correct; text traces to RESEARCH.md.
+// Gate 1 options (JOURNEY.md). Only B is correct; text traces to RESEARCH.md
+// (cristae fold to pack in surface area for the energy machinery).
 const GATE1_OPTIONS = [
   { key: 'A', label: "To store the cell's DNA", correct: false },
   { key: 'B', label: 'To pack in more surface area for making energy', correct: true },
@@ -183,17 +204,15 @@ const GATE1_OPTIONS = [
   { key: 'D', label: 'To give the mitochondrion its shape', correct: false },
 ]
 
-const answerButtonStyle = {
-  font: 'inherit',
-  fontSize: 'clamp(14px, 2vw, 16px)',
-  color: '#e8ecf4',
-  background: 'rgba(64, 207, 224, 0.08)',
-  border: '1px solid rgba(64, 207, 224, 0.4)',
-  borderRadius: 10,
-  padding: '12px 16px',
-  cursor: 'pointer',
-  textAlign: 'left',
-}
+// Gate 2 options (JOURNEY.md). Only B is correct; it traces to the existing
+// electron transport chain and ATP synthase entries in RESEARCH.md (protons
+// flowing back across the inner membrane spin the motor).
+const GATE2_OPTIONS = [
+  { key: 'A', label: 'Sunlight', correct: false },
+  { key: 'B', label: 'Protons rushing back across the inner membrane', correct: true },
+  { key: 'C', label: 'Glucose entering the matrix directly', correct: false },
+  { key: 'D', label: "The mitochondrion's DNA", correct: false },
+]
 
 export default function App() {
   const titleRef = useRef(null)
@@ -202,21 +221,34 @@ export default function App() {
   const scene4Ref = useRef(null)
   const scene5Ref = useRef(null)
   const scene6Ref = useRef(null)
+  const scene7Ref = useRef(null)
   const detourRef = useRef(null)
-  const gateRef = useRef(null)
+  const gate1Ref = useRef(null)
+  const gate2Ref = useRef(null)
   const meterRef = useRef(null)
   const meterFillRef = useRef(null)
   const meterElectricRef = useRef(null)
 
   const [gate1Passed, setGate1Passed] = useState(false)
   const [gate1Wrong, setGate1Wrong] = useState(false)
+  const [gate2Passed, setGate2Passed] = useState(false)
+  const [gate2Wrong, setGate2Wrong] = useState(false)
 
-  const handleAnswer = (correct) => {
+  const handleGate1Answer = (correct) => {
     if (correct) {
       setGate1Passed(true)
       setGate1Wrong(false)
     } else {
       setGate1Wrong(true)
+    }
+  }
+
+  const handleGate2Answer = (correct) => {
+    if (correct) {
+      setGate2Passed(true)
+      setGate2Wrong(false)
+    } else {
+      setGate2Wrong(true)
     }
   }
 
@@ -242,7 +274,9 @@ export default function App() {
           <MatrixScene />
           <ElectronTransportChainScene />
           <AtpSynthaseScene />
-          <GateLock passed={gate1Passed} />
+          <HeartTissueScene />
+          <GateLock passed={gate1Passed} lockOffset={GATE1_OFFSET} />
+          <GateLock passed={gate2Passed} lockOffset={GATE2_OFFSET} />
           <OverlayController
             titleRef={titleRef}
             scene2Ref={scene2Ref}
@@ -250,9 +284,12 @@ export default function App() {
             scene4Ref={scene4Ref}
             scene5Ref={scene5Ref}
             scene6Ref={scene6Ref}
+            scene7Ref={scene7Ref}
             detourRef={detourRef}
-            gateRef={gateRef}
-            gatePassed={gate1Passed}
+            gate1Ref={gate1Ref}
+            gate1Passed={gate1Passed}
+            gate2Ref={gate2Ref}
+            gate2Passed={gate2Passed}
             meterRef={meterRef}
             meterFillRef={meterFillRef}
             meterElectricRef={meterElectricRef}
@@ -375,6 +412,19 @@ export default function App() {
         </p>
       </div>
 
+      {/* Scene 7 copy (JOURNEY.md Scene 7, verbatim). Traces to RESEARCH.md:
+          human heart muscle is roughly a quarter mitochondria by volume (about
+          23% by direct morphometry). Rendered as "a quarter", never a third. */}
+      <div ref={scene7Ref} style={{ ...overlayBase, opacity: 0 }}>
+        <p style={copyStyle}>
+          So where does all that energy go? Everywhere that never stops working.
+          About a quarter of the volume of your heart-muscle cells is
+          mitochondria: a quarter of the machine is dedicated power plant. Your
+          neurons, your muscles, they&rsquo;re all hungry for the ATP you just
+          watched get minted.
+        </p>
+      </div>
+
       {/* Charge meter: a qualitative bar that climbs as the gradient builds.
           NO numbers on it (the millivolt figures are marked TO SOURCE and stay
           off the site). Violet to match the pumped protons. */}
@@ -441,77 +491,33 @@ export default function App() {
         </span>
       </div>
 
-      {/* Quiz Gate 1 (JOURNEY.md). Blocks forward scroll until answered. The
-          outer wrapper ignores the mouse so scrolling passes through; the inner
-          card's pointer-events are toggled with its visibility by
-          OverlayController. */}
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: 24,
-          pointerEvents: 'none',
-        }}
-      >
-        <div
-          ref={gateRef}
-          style={{
-            opacity: 0,
-            pointerEvents: 'none',
-            width: '100%',
-            maxWidth: 540,
-            background: 'rgba(6, 12, 20, 0.8)',
-            border: '1px solid rgba(64, 207, 224, 0.35)',
-            borderRadius: 16,
-            padding: '26px 24px',
-            textAlign: 'center',
-          }}
-        >
-          <p
-            style={{
-              margin: 0,
-              fontSize: 12,
-              letterSpacing: '0.14em',
-              textTransform: 'uppercase',
-              color: '#40cfe0',
-              opacity: 0.9,
-            }}
-          >
-            Quiz Gate 1
-          </p>
-          {gate1Passed ? (
-            <p style={{ margin: '14px 0 0', fontSize: 'clamp(15px, 2.2vw, 18px)', color: '#cfe9ef' }}>
-              Correct. Keep scrolling to dive in.
-            </p>
-          ) : (
-            <>
-              <p style={{ margin: '12px 0 0', fontSize: 'clamp(16px, 2.4vw, 20px)', lineHeight: 1.45 }}>
-                Why is the inner membrane folded into cristae?
-              </p>
-              <div style={{ display: 'grid', gap: 10, marginTop: 20 }}>
-                {GATE1_OPTIONS.map((o) => (
-                  <button
-                    key={o.key}
-                    type="button"
-                    onClick={() => handleAnswer(o.correct)}
-                    style={answerButtonStyle}
-                  >
-                    {o.key}) {o.label}
-                  </button>
-                ))}
-              </div>
-              {gate1Wrong && (
-                <p style={{ margin: '16px 0 0', fontSize: 14, color: '#cfe9ef', fontStyle: 'italic' }}>
-                  Not quite, scroll back up and look at those folds again.
-                </p>
-              )}
-            </>
-          )}
-        </div>
-      </div>
+      {/* Quiz Gate 1 (JOURNEY.md). Blocks forward scroll until answered, then the
+          spiral dives inward to the matrix. One reusable QuizGate instance. */}
+      <QuizGate
+        cardRef={gate1Ref}
+        label="Quiz Gate 1"
+        question="Why is the inner membrane folded into cristae?"
+        options={GATE1_OPTIONS}
+        passed={gate1Passed}
+        wrong={gate1Wrong}
+        passedNote="Correct. Keep scrolling to dive in."
+        wrongHint="Not quite, scroll back up and look at those folds again."
+        onAnswer={handleGate1Answer}
+      />
+
+      {/* Quiz Gate 2 (JOURNEY.md). Same mechanic as Gate 1; on the correct answer
+          the spiral plays OUTWARD, zooming out of the cell to the body (Scene 7). */}
+      <QuizGate
+        cardRef={gate2Ref}
+        label="Quiz Gate 2"
+        question="What actually powers ATP synthase to spin?"
+        options={GATE2_OPTIONS}
+        passed={gate2Passed}
+        wrong={gate2Wrong}
+        passedNote="Correct. Keep scrolling to zoom out."
+        wrongHint="Not quite. Scroll back up and watch what actually rushes through the motor and turns it."
+        onAnswer={handleGate2Answer}
+      />
     </div>
   )
 }

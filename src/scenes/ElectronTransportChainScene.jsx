@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import { useScroll } from '@react-three/drei'
 import { MeshStandardMaterial, Quaternion, Vector3 } from 'three'
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion.js'
+import { page } from '../journeyRanges.js'
 
 /*
  * ElectronTransportChainScene — JOURNEY.md Scene 5 (both parts).
@@ -183,12 +184,13 @@ export function ElectronTransportChainScene() {
     const offset = scroll.offset
     // presence: fades IN as Scene 5 begins (so earlier scenes stay clean) and
     // fades OUT as Scene 6 (ATP synthase) takes over, so the pumping apparatus
-    // recedes for the climax. charge: climbs as we track along the row.
-    // (All re-spaced for pages=25.)
-    const presenceIn = clamp01((offset - 0.486) / 0.024)
-    const presenceOut = 1 - clamp01((offset - 0.722) / 0.044)
+    // recedes for the climax. charge: climbs as we track along the row. Each
+    // window is pinned to a page number via page() so it stays anchored when
+    // TOTAL_PAGES grows (the trailing "// was <fraction>" records the old value).
+    const presenceIn = clamp01((offset - page(8.748)) / page(0.432)) // was (offset - 0.486) / 0.024
+    const presenceOut = 1 - clamp01((offset - page(12.996)) / page(0.792)) // was (offset - 0.722) / 0.044
     const presence = presenceIn * presenceOut
-    const charge = clamp01((offset - 0.504) / 0.084)
+    const charge = clamp01((offset - page(9.072)) / page(1.512)) // was (offset - 0.504) / 0.084
 
     stationMat.opacity = presence
     stationMat.emissiveIntensity = 0.4 + 0.7 * charge // membrane glows as it charges
