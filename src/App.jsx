@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
-import { Canvas, useFrame } from '@react-three/fiber'
+import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { ScrollControls, useScroll } from '@react-three/drei'
+import { Color } from 'three'
 import { CameraRig } from './CameraRig.jsx'
 import { MitochondrionScene } from './scenes/MitochondrionScene.jsx'
 import { OuterMembraneScene } from './scenes/OuterMembraneScene.jsx'
@@ -10,6 +11,9 @@ import { ElectronTransportChainScene } from './scenes/ElectronTransportChainScen
 import { AtpSynthaseScene } from './scenes/AtpSynthaseScene.jsx'
 import { HeartTissueScene } from './scenes/HeartTissueScene.jsx'
 import { BiggerStoryScene } from './scenes/BiggerStoryScene.jsx'
+import { ThresholdScene } from './scenes/ThresholdScene.jsx'
+import { FrontierScene } from './scenes/FrontierScene.jsx'
+import { WholeCellScene } from './scenes/WholeCellScene.jsx'
 import { QuizGate } from './QuizGate.jsx'
 import { GATE1_OFFSET, GATE2_OFFSET, GATE3_OFFSET, TOTAL_PAGES, page } from './journeyRanges.js'
 
@@ -57,6 +61,47 @@ function GateLock({ passed, lockOffset }) {
   return null
 }
 
+// The base look (matches the static <color>/<fog> below) and the cooler frontier
+// look we lerp toward once past the threshold.
+const BASE_BG = new Color(SPACE)
+const COOL_BG = new Color('#070c16') // a deeper, cooler blue for the frontier
+
+/*
+ * FrontierEnvironment — cools the palette and opens the space as we cross the
+ * threshold. It drives the SHARED fog and background colour from scroll, but only
+ * in the new page range: before page 33.5 the lerp factor is 0, so it writes the
+ * exact base values and every earlier scene looks identical. Past the threshold it
+ * shifts toward COOL_BG and pushes fog far out (24 -> 42) so we can see further.
+ */
+function FrontierEnvironment() {
+  const scroll = useScroll()
+  const { scene } = useThree()
+  useFrame(() => {
+    const coolFactor = clamp01((scroll.offset - page(33.5)) / page(1.5))
+    if (scene.fog) {
+      scene.fog.color.lerpColors(BASE_BG, COOL_BG, coolFactor)
+      scene.fog.far = 24 + (42 - 24) * coolFactor
+    }
+    if (scene.background && scene.background.isColor) {
+      scene.background.lerpColors(BASE_BG, COOL_BG, coolFactor)
+    }
+  })
+  return null
+}
+
+/*
+ * ScrollElCapture — stashes the ScrollControls scroll element into a ref so the
+ * closing Restart button (plain HTML, outside the Canvas) can smooth-scroll the
+ * ride back to the top.
+ */
+function ScrollElCapture({ elRef }) {
+  const scroll = useScroll()
+  useFrame(() => {
+    elRef.current = scroll.el
+  })
+  return null
+}
+
 /*
  * OverlayController — fades the HTML text blocks based on scroll position.
  *
@@ -76,6 +121,12 @@ function OverlayController({
   story2Ref,
   story3Ref,
   story4Ref,
+  thresholdRef,
+  frontier1Ref,
+  frontier2Ref,
+  frontier3Ref,
+  closingRef,
+  restartBtnRef,
   detourRef,
   gate1Ref,
   gate1Passed,
@@ -192,6 +243,39 @@ function OverlayController({
       gate3Ref.current.style.opacity = String(show)
       gate3Ref.current.style.pointerEvents = show && !gate3Passed ? 'auto' : 'none'
     }
+    // Threshold copy: fades in as we approach the portal, out as we pass through
+    // it into the frontier.
+    if (thresholdRef.current) {
+      const inAmount = clamp01((o - page(33.7)) / page(0.5))
+      const outAmount = 1 - clamp01((o - page(35.4)) / page(0.5))
+      thresholdRef.current.style.opacity = String(inAmount * outAmount)
+    }
+    // Scene 9 frontier cards: one research beat per node, each fading in as we
+    // reach its node and back out before the next.
+    if (frontier1Ref.current) {
+      const inAmount = clamp01((o - page(36.0)) / page(0.4))
+      const outAmount = 1 - clamp01((o - page(37.3)) / page(0.4))
+      frontier1Ref.current.style.opacity = String(inAmount * outAmount)
+    }
+    if (frontier2Ref.current) {
+      const inAmount = clamp01((o - page(37.8)) / page(0.4))
+      const outAmount = 1 - clamp01((o - page(39.1)) / page(0.4))
+      frontier2Ref.current.style.opacity = String(inAmount * outAmount)
+    }
+    if (frontier3Ref.current) {
+      const inAmount = clamp01((o - page(39.6)) / page(0.4))
+      const outAmount = 1 - clamp01((o - page(40.9)) / page(0.4))
+      frontier3Ref.current.style.opacity = String(inAmount * outAmount)
+    }
+    // Closing copy: fades in as the whole cell frames up, then holds to the end.
+    // Only the Restart button takes the mouse (and only once the closing is up),
+    // so nothing intercepts scrolling earlier in the ride.
+    if (closingRef.current) {
+      closingRef.current.style.opacity = String(clamp01((o - page(42.4)) / page(0.6)))
+    }
+    if (restartBtnRef.current) {
+      restartBtnRef.current.style.pointerEvents = o > page(42.6) ? 'auto' : 'none'
+    }
     // Charge meter: fades in with Scene 5, its fill climbs as charge builds, then
     // DISCHARGES (drops) during the Scene 6 orbit as protons flow back.
     if (meterRef.current) {
@@ -277,6 +361,13 @@ export default function App() {
   const story2Ref = useRef(null)
   const story3Ref = useRef(null)
   const story4Ref = useRef(null)
+  const thresholdRef = useRef(null)
+  const frontier1Ref = useRef(null)
+  const frontier2Ref = useRef(null)
+  const frontier3Ref = useRef(null)
+  const closingRef = useRef(null)
+  const restartBtnRef = useRef(null)
+  const scrollElRef = useRef(null)
   const detourRef = useRef(null)
   const gate1Ref = useRef(null)
   const gate2Ref = useRef(null)
@@ -319,6 +410,12 @@ export default function App() {
     }
   }
 
+  // Restart: smooth-scroll the ScrollControls element back to the top of the ride.
+  const handleRestart = () => {
+    const el = scrollElRef.current
+    if (el) el.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   return (
     <div style={{ position: 'fixed', inset: 0 }}>
       <Canvas camera={{ position: [0, 0.5, 7], fov: 50 }}>
@@ -343,6 +440,11 @@ export default function App() {
           <AtpSynthaseScene />
           <HeartTissueScene />
           <BiggerStoryScene />
+          <ThresholdScene />
+          <FrontierScene />
+          <WholeCellScene />
+          <FrontierEnvironment />
+          <ScrollElCapture elRef={scrollElRef} />
           <GateLock passed={gate1Passed} lockOffset={GATE1_OFFSET} />
           <GateLock passed={gate2Passed} lockOffset={GATE2_OFFSET} />
           <GateLock passed={gate3Passed} lockOffset={GATE3_OFFSET} />
@@ -358,6 +460,12 @@ export default function App() {
             story2Ref={story2Ref}
             story3Ref={story3Ref}
             story4Ref={story4Ref}
+            thresholdRef={thresholdRef}
+            frontier1Ref={frontier1Ref}
+            frontier2Ref={frontier2Ref}
+            frontier3Ref={frontier3Ref}
+            closingRef={closingRef}
+            restartBtnRef={restartBtnRef}
             detourRef={detourRef}
             gate1Ref={gate1Ref}
             gate1Passed={gate1Passed}
@@ -535,6 +643,81 @@ export default function App() {
           Beyond ATP: they generate body heat, store calcium, and help build
           hormones.
         </p>
+      </div>
+
+      {/* Threshold copy (JOURNEY.md THRESHOLD, verbatim). Not a fact card: the
+          on-screen boundary telling the visitor we are leaving settled science.
+          Makes no biological claim, so it needs no RESEARCH.md entry. */}
+      <div ref={thresholdRef} style={{ ...overlayBase, opacity: 0 }}>
+        <p style={copyStyle}>
+          From here on, we leave the settled textbook and step into what
+          researchers are still working out. Everything before this line is in
+          every biology course. Everything after it is where the science is still
+          pointing, still arguing, still learning. Here&rsquo;s where it&rsquo;s
+          headed.
+        </p>
+      </div>
+
+      {/* Scene 9 frontier cards (JOURNEY.md Scene 9, verbatim). Active research,
+          so they sit AFTER the threshold. Each traces to RESEARCH.md Part B:
+          aging as one hallmark not the cause (Lopez-Otin 2023), exercise builds
+          mitochondria (2025 meta-analysis), MELAS + ~1 in 5,000 prevalence. */}
+      <div ref={frontier1Ref} style={{ ...overlayBase, opacity: 0 }}>
+        <p style={copyStyle}>
+          Aging: worn-down mitochondria are now considered one of the hallmarks of
+          aging, one of several interacting drivers researchers track, not the
+          single cause.
+        </p>
+      </div>
+
+      <div ref={frontier2Ref} style={{ ...overlayBase, opacity: 0 }}>
+        <p style={copyStyle}>
+          Exercise: train your endurance, and your body responds by building more
+          mitochondria. Your cells literally retool for the demand you place on
+          them.
+        </p>
+      </div>
+
+      <div ref={frontier3Ref} style={{ ...overlayBase, opacity: 0 }}>
+        <p style={copyStyle}>
+          Disease: when this ancient machine carries a fault, it causes real
+          inherited illness. One example, MELAS, is passed down the same maternal
+          line you just learned about, and it strikes the hungriest organs first:
+          brain, heart, muscle. Roughly 1 in 5,000 people lives with a primary
+          mitochondrial disease.
+        </p>
+      </div>
+
+      {/* Scene 10 closing copy (JOURNEY.md Scene 10, verbatim) + optional restart.
+          Recaps the endosymbiosis story (already vetted); makes no new claim. The
+          wrapper stays click-through; only the Restart button takes the mouse. */}
+      <div ref={closingRef} style={{ ...overlayBase, opacity: 0 }}>
+        <p style={copyStyle}>
+          That&rsquo;s the mighty mitochondrion: an ancient bacterial guest that
+          became the engine of complex life, and of you. Now you know what&rsquo;s
+          powering every beat, breath, and thought, and where scientists are still
+          chasing the rest of the story.
+        </p>
+        <button
+          ref={restartBtnRef}
+          type="button"
+          onClick={handleRestart}
+          style={{
+            marginTop: 24,
+            font: 'inherit',
+            fontSize: 'clamp(13px, 1.8vw, 15px)',
+            letterSpacing: '0.06em',
+            color: '#cfe9ef',
+            background: 'rgba(64, 207, 224, 0.1)',
+            border: '1px solid rgba(64, 207, 224, 0.4)',
+            borderRadius: 10,
+            padding: '10px 22px',
+            cursor: 'pointer',
+            pointerEvents: 'none',
+          }}
+        >
+          Restart the journey
+        </button>
       </div>
 
       {/* Charge meter: a qualitative bar that climbs as the gradient builds.

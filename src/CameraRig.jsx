@@ -101,8 +101,27 @@ const WAYPOINTS = [
 
   // --- Frontier hand-off (Gate 3 reward) ---
   // On a correct answer, drift forward into open, cooler, empty space: the
-  // approach to the threshold (built later). No spiral; just a quiet push onward.
+  // approach to the threshold. No spiral; just a quiet push onward.
   { at: page(33), pos: [0.6, 0.3, 44], lookAt: [0.6, 0.3, 52] },
+
+  // --- Threshold (the doorway out of settled science) ---
+  // Keep drifting +z straight at the portal ring (centred at z = 52) and pass
+  // through its hole. The palette cools as we cross (see FrontierEnvironment).
+  { at: page(34.2), pos: [0.6, 0.3, 49], lookAt: [0.6, 0.3, 57] }, // approaching the portal
+  { at: page(35.4), pos: [0.6, 0.3, 55], lookAt: [0.6, 0.3, 63] }, // just through it, into open cooler space
+
+  // --- Scene 9 (the frontier) node drift ---
+  // Cooler, more open constellation. Glide from node to node; each sits 4 units
+  // ahead of its camera pose. Bluer than the settled Scene 8 nodes.
+  { at: page(36.6), pos: [-2.5, 0.6, 58], lookAt: [-2.5, 0.6, 62] }, // node 1: Aging
+  { at: page(38.4), pos: [2.6, -0.3, 66], lookAt: [2.6, -0.3, 70] }, // node 2: Exercise
+  { at: page(40.2), pos: [-2.0, 0.7, 74], lookAt: [-2.0, 0.7, 78] }, // node 3: Disease
+
+  // --- Scene 10 (the closing) pull-back ---
+  // A whole cell (translucent membrane full of small glowing mitochondria) sits
+  // ahead at z = 88. Bring it into frame, then ease back so the whole cell reads.
+  { at: page(42), pos: [-0.5, 1.5, 80], lookAt: [0, 0.6, 88] }, // the cell comes into view
+  { at: page(44), pos: [0, 1.2, 77], lookAt: [0, 0.6, 88] }, // pulled back, the whole cell glowing
 ]
 
 // Linear interpolation and eased helpers.

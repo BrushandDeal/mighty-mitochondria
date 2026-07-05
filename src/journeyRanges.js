@@ -28,9 +28,12 @@
 // Scene 7, the zoom out to the body (22 -> 24).
 // 24 -> 33: added Scene 8, the bigger-story constellation (pages 25 -> 30), Quiz
 // Gate 3 (page 31), and a quiet forward drift toward the frontier (31 -> 33).
+// 33 -> 44: added the Threshold (pages 34 -> 35), Scene 9, the frontier (nodes at
+// pages 36.6, 38.4, 40.2), and Scene 10, the closing pull-back to a whole cell
+// (pages 42 -> 44).
 // Every earlier page number is unchanged, so every earlier scene keeps firing at
 // the same spot.
-export const TOTAL_PAGES = 33
+export const TOTAL_PAGES = 44
 
 // page(n): convert an absolute page number (0 .. TOTAL_PAGES) into a scroll
 // offset (0 .. 1). Everything that pins to a scroll position routes through here.
