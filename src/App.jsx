@@ -35,7 +35,7 @@ import { GATE1_OFFSET, GATE2_OFFSET, GATE3_OFFSET, TOTAL_PAGES, page } from './j
  * TOTAL_PAGES so the new scene has room. Earlier page numbers stay put.
  */
 
-const SPACE = '#05060a' // the dark "cytoplasm" background
+const SPACE = '#06161c' // the deep blue/teal "cytoplasm" base (JOURNEY.md section 4)
 
 const clamp01 = (v) => Math.min(1, Math.max(0, v))
 

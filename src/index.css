@@ -7,7 +7,7 @@
 
   /* Palette from JOURNEY.md section 4:
      deep blue/teal base, cyan structure, warm gold reserved for energy. */
-  --space: #05060a; /* the dark "cytoplasm" the mitochondrion floats in */
+  --space: #06161c; /* the deep blue/teal "cytoplasm" the mitochondrion floats in */
   --gold: #ffcf70; /* the energy color */
   --text: #e8ecf4;
 
