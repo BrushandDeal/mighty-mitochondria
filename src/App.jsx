@@ -533,8 +533,8 @@ export default function App() {
           outer membrane is permeable to small molecules via porins. */}
       <div ref={scene2Ref} style={{ ...overlayBase, opacity: 0 }}>
         <p style={copyStyle}>
-          First, the outer wall. It&rsquo;s a border, but a relaxed one, studded
-          with pores that let small molecules drift in and out freely. Think
+          First, the outer wall of a mitochondrion. It is a relaxed border,
+          studded with pores that let small molecules drift through freely. Think
           checkpoint, not fortress.
         </p>
       </div>
@@ -543,11 +543,11 @@ export default function App() {
           inner membrane is folded into cristae (surface area) and is sealed. */}
       <div ref={scene3Ref} style={{ ...overlayBase, opacity: 0 }}>
         <p style={copyStyle}>
-          Slip inside and everything changes. The inner membrane is packed into
-          deep folds called cristae. The trick is surface area: more folds mean
-          more room for the machinery that makes energy. And unlike the outer
-          wall, this one is sealed tight. Remember that seal. It&rsquo;s the whole
-          reason the next part works.
+          Slip inside and everything changes. The inner membrane folds into deep
+          pleats called cristae. The trick is surface area: more folds, more room
+          for the machinery that makes energy. And unlike the outer wall, this one
+          is sealed tight. Remember that seal; it is the whole reason the next
+          part works.
         </p>
       </div>
 
@@ -557,12 +557,11 @@ export default function App() {
       <div ref={scene4Ref} style={{ ...overlayBase, opacity: 0 }}>
         <p style={copyStyle}>
           This inner space is the matrix, and it hides a secret: the mitochondrion
-          has its own DNA, separate from the rest of the cell. A clue we&rsquo;ll
-          come back to. An earlier step of energy extraction already happened out
-          in the cell, before anything reached here. What happens inside the
-          mitochondrion is the next stage: a loop of chemistry called the citric
-          acid cycle breaks the fuel down further and loads up tiny
-          &ldquo;electron carriers&rdquo; for the main event.
+          carries its own DNA, separate from the rest of the cell. A clue we will
+          come back to. The first step of releasing energy already happened out in
+          the cell, before anything reached here. Inside runs the next stage: a
+          loop of chemistry called the citric acid cycle that breaks the fuel down
+          further and loads tiny electron carriers for the main event.
         </p>
       </div>
 
@@ -575,17 +574,14 @@ export default function App() {
           I, so it drives less ATP. */}
       <div ref={scene5Ref} style={{ ...overlayBase, opacity: 0 }}>
         <p style={copyStyle}>
-          Now the main event. Those electron carriers dump their cargo into a
-          chain of protein stations. As electrons hop down the chain, most
-          stations use the energy to shove protons across the sealed membrane,
-          one side filling up while the other empties. But here&rsquo;s the catch
-          that trips people: protons aren&rsquo;t water. Each one is a naked
-          positive charge. So you&rsquo;re not just piling stuff up, you&rsquo;re
-          peeling positive away from negative and building a voltage. The sealed
-          membrane is charging like a battery. And watch this one station: an
-          electron slips in a side door and passes right through without pumping
-          anything. Fuel that enters here drives less energy than fuel that takes
-          the main road. Not every step pulls the same weight.
+          Now the main event. The carriers dump their cargo into a chain of
+          protein stations, and as electrons hop down the line, most stations
+          shove protons across the sealed membrane. Here is the catch that trips
+          people: a proton is a naked positive charge, so you are not just piling
+          stuff up, you are building a voltage. The sealed membrane is charging
+          like a battery. And watch this one station: an electron slips in a side
+          door and passes through without pumping anything. Fuel that enters here
+          drives less energy than fuel that takes the main road.
         </p>
       </div>
 
@@ -596,14 +592,13 @@ export default function App() {
           recycling. */}
       <div ref={scene6Ref} style={{ ...overlayBase, opacity: 0 }}>
         <p className="scene6-copy" style={copyStyle}>
-          Here&rsquo;s the payoff. All that stored charge has one way out that
-          makes ATP: back through a single machine, ATP synthase. The rush
-          of protons spins it like a revolving door, and every turn snaps loose
-          parts together into ATP, your body&rsquo;s energy currency. It
-          isn&rsquo;t conjured from nothing; the machine bolts together pieces
-          already floating nearby. You mint roughly your own body weight in ATP
-          every single day, not by making that much new stuff, but by recycling a
-          small amount through this motor hundreds of times over.
+          Here is the payoff. All that stored charge has one way out that makes
+          ATP: back through a single machine, ATP synthase. The rush of protons
+          spins it like a revolving door, and every turn snaps loose parts into
+          ATP, your body&rsquo;s energy currency. It is not conjured from nothing;
+          the machine bolts together pieces already floating nearby. You mint
+          roughly your body weight in ATP each day, not by making that much, but
+          by recycling a little through this motor hundreds of times over.
         </p>
       </div>
 
@@ -613,13 +608,13 @@ export default function App() {
           the reversible recharge run by ATP synthase. */}
       <div ref={detourRef} style={{ ...overlayBase, opacity: 0 }}>
         <p className="scene6-copy" style={copyStyle}>
-          Quick detour: what is this coin, actually? ATP is your cell&rsquo;s
+          Quick detour: what actually is ATP? ATP is your cell&rsquo;s
           rechargeable energy carrier, a small molecule with three phosphate
-          groups clipped in a row. When something in the cell needs power, it pops
-          off the outer phosphate to release energy the cell puts to work, leaving
-          ADP behind with two. Later, this very machine clips a phosphate back on,
-          turning ADP back into ATP. You never hoard much of it; you spend and
-          recharge the same molecules hundreds of times a day.
+          groups in a row. When the cell needs power, it splits off the outer
+          phosphate to release energy, leaving ADP with two. Later this same
+          machine clips a phosphate back on, turning ADP back into ATP. You never
+          hoard much; you spend and recharge the same molecules hundreds of times
+          a day.
         </p>
       </div>
 
