@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { ScrollControls, useScroll } from '@react-three/drei'
+import { EffectComposer, Bloom } from '@react-three/postprocessing'
 import { Color } from 'three'
 import { CameraRig } from './CameraRig.jsx'
 import { MitochondrionScene } from './scenes/MitochondrionScene.jsx'
@@ -98,6 +99,31 @@ function ScrollElCapture({ elRef }) {
   const scroll = useScroll()
   useFrame(() => {
     elRef.current = scroll.el
+  })
+  return null
+}
+
+// Bloom strength: subtle everywhere so the quiet explanatory scenes stay calm,
+// dialled UP across the ATP synthase climax (Scene 6, pages ~14 to 18.5) so the
+// gold minting glows. Text is a DOM overlay, so bloom never touches its legibility.
+const BLOOM_BASE = 0.5
+const BLOOM_PEAK = 1.5
+
+/*
+ * BloomController — drives the Bloom pass's intensity from scroll. Lives inside
+ * ScrollControls (so it can read scroll) and writes to the shared bloom ref that
+ * the EffectComposer's <Bloom> owns.
+ */
+function BloomController({ bloomRef }) {
+  const scroll = useScroll()
+  useFrame(() => {
+    if (!bloomRef.current) return
+    const o = scroll.offset
+    // Ramp up into Scene 6 and back down after the hero push-in.
+    const up = clamp01((o - page(13.0)) / page(1.0))
+    const down = 1 - clamp01((o - page(18.5)) / page(1.0))
+    const climax = up * down
+    bloomRef.current.intensity = BLOOM_BASE + (BLOOM_PEAK - BLOOM_BASE) * climax
   })
   return null
 }
@@ -384,6 +410,7 @@ export default function App() {
   const meterRef = useRef(null)
   const meterFillRef = useRef(null)
   const meterElectricRef = useRef(null)
+  const bloomRef = useRef(null)
 
   const [gate1Passed, setGate1Passed] = useState(false)
   const [gate1Wrong, setGate1Wrong] = useState(false)
@@ -457,6 +484,7 @@ export default function App() {
           <GateLock passed={gate1Passed} lockOffset={GATE1_OFFSET} />
           <GateLock passed={gate2Passed} lockOffset={GATE2_OFFSET} />
           <GateLock passed={gate3Passed} lockOffset={GATE3_OFFSET} />
+          <BloomController bloomRef={bloomRef} />
           <OverlayController
             titleRef={titleRef}
             scene1Ref={scene1Ref}
@@ -488,6 +516,21 @@ export default function App() {
             meterElectricRef={meterElectricRef}
           />
         </ScrollControls>
+
+        {/* Cinematic bloom (glow). Site-wide via EffectComposer + a Bloom pass;
+            its intensity is driven by BloomController (subtle in quiet scenes, up
+            at the ATP synthase climax). luminanceThreshold keeps only the bright
+            emissive elements glowing, so dark scenes stay clean. mipmapBlur gives
+            a soft, cheap, high-quality falloff. */}
+        <EffectComposer>
+          <Bloom
+            ref={bloomRef}
+            intensity={BLOOM_BASE}
+            luminanceThreshold={0.6}
+            luminanceSmoothing={0.3}
+            mipmapBlur
+          />
+        </EffectComposer>
       </Canvas>
 
       {/* Scene 0 title overlay (JOURNEY.md Scene 0). Fades out as you scroll. */}
