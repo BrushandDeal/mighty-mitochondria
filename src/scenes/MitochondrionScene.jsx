@@ -36,6 +36,14 @@ const GOLD = '#ffcf70' // used ONLY by the floating dust (Sparkles) below
 const SHELL_OPACITY = 0.55
 const HALO_OPACITY = 0.08
 const LIGHT_INTENSITY = 6
+const SHELL_EMISSIVE = 0.25 // faint self-glow (fades with the body)
+const SHELL_TRANSMISSION = 0.35 // subtle translucency: light reads through the membrane
+
+// Scene-local cool key / fill / rim lights for the opening organelle. They fade
+// out with the body (via `vis`) so they never leak into the interior scenes.
+const KEY_I = 2.0 // main cool key light, front-upper-right
+const FILL_I = 0.6 // soft blue fill from the opposite side
+const RIM_I = 2.6 // back/rim light that catches the edge and separates it from the bg
 
 // --- Organic form: noise-displaced geometry --------------------------------
 // A near-perfect ellipsoid reads as computer-generated. The conventional fix is
@@ -122,6 +130,9 @@ export function MitochondrionScene() {
   const shellMat = useRef()
   const haloMat = useRef()
   const light = useRef()
+  const keyLight = useRef()
+  const fillLight = useRef()
+  const rimLight = useRef()
   const scroll = useScroll()
   const prefersReducedMotion = usePrefersReducedMotion()
 
@@ -133,9 +144,19 @@ export function MitochondrionScene() {
     const vis = 1 - interiorFactor(scroll.offset)
 
     // Fade the whole outer body by its scroll-driven visibility.
-    if (shellMat.current) shellMat.current.opacity = SHELL_OPACITY * vis
+    if (shellMat.current) {
+      // Fade opacity, translucency, and self-glow together so the physical
+      // membrane disappears cleanly as the camera moves inside.
+      shellMat.current.opacity = SHELL_OPACITY * vis
+      shellMat.current.transmission = SHELL_TRANSMISSION * vis
+      shellMat.current.emissiveIntensity = SHELL_EMISSIVE * vis
+    }
     if (haloMat.current) haloMat.current.opacity = HALO_OPACITY * vis
     if (light.current) light.current.intensity = LIGHT_INTENSITY * vis
+    // Fade the key/fill/rim lights with the body so they never light the interior.
+    if (keyLight.current) keyLight.current.intensity = KEY_I * vis
+    if (fillLight.current) fillLight.current.intensity = FILL_I * vis
+    if (rimLight.current) rimLight.current.intensity = RIM_I * vis
 
     // Turn slowly, easing the spin to a stop as the body fades (so the interior
     // is steady for Scene 3's fold sweep). Frozen entirely under reduced motion.
@@ -145,20 +166,43 @@ export function MitochondrionScene() {
   })
 
   return (
+    <>
+      {/* Fixed cool key / fill / rim lights, OUTSIDE the spinning group so the
+          highlights sweep across the surface as the bean rotates, giving it depth
+          and a rim that separates it from the deep blue/teal background. Cool
+          tones only (never gold on the base form); all fade out with the body via
+          `vis`, so they never light the interior scenes. */}
+      <directionalLight ref={keyLight} position={[5, 4, 6]} intensity={KEY_I} color="#cfeaff" />
+      <directionalLight ref={fillLight} position={[-6, -1, 4]} intensity={FILL_I} color="#6f8fd0" />
+      <directionalLight ref={rimLight} position={[-3, 5, -7]} intensity={RIM_I} color="#8fd6ff" />
+
     <group ref={group}>
       {/* The translucent outer body: the noise-displaced icosphere, squashed
-          along two axes into a bean. `transparent` + a low `opacity` let the
-          inner membrane show faintly through, and let it fade out on entry. */}
+          along two axes into a bean. A physically based material with subtle
+          transmission (translucency), soft clearcoat, and sheen, so light reads
+          THROUGH the membrane and the interior glows faintly through it: a soft,
+          wet, organic surface rather than a hard shiny shell. `transparent` +
+          `opacity` also let it fade out on entry. All cyan/teal, never gold. */}
       <mesh scale={[1.7, 1, 1]} geometry={bodyGeometry}>
-        <meshStandardMaterial
+        <meshPhysicalMaterial
           ref={shellMat}
           color={BODY}
           emissive={BODY}
-          emissiveIntensity={0.35}
+          emissiveIntensity={SHELL_EMISSIVE}
           transparent
           opacity={SHELL_OPACITY}
-          roughness={0.4}
-          metalness={0.1}
+          roughness={0.5}
+          metalness={0}
+          clearcoat={0.5}
+          clearcoatRoughness={0.55}
+          sheen={0.6}
+          sheenRoughness={0.6}
+          sheenColor={HALO}
+          transmission={SHELL_TRANSMISSION}
+          thickness={1.2}
+          ior={1.35}
+          attenuationColor={BODY}
+          attenuationDistance={3}
         />
       </mesh>
 
@@ -195,5 +239,6 @@ export function MitochondrionScene() {
         color={GOLD}
       />
     </group>
+    </>
   )
 }
