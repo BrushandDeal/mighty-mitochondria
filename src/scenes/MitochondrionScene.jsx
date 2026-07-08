@@ -91,8 +91,17 @@ const fbm = (x, y, z, octaves, gain) => {
 const FORM_FREQ = 1.6 // broad lumps, not high-frequency chatter
 const FORM_AMP = 0.14 // +/-14% radius: clearly irregular, still bean-shaped
 
+// A second, finer, low-amplitude noise layer riding on top of the broad form adds
+// micro-irregularity so the surface reads as a living membrane rather than a
+// smooth shell. Amplitude is a fraction of the form's, and recomputed normals let
+// it catch light, so it shows as fine surface texture WITHOUT changing the
+// silhouette (the broad contours from FORM_* are untouched).
+const MICRO_FREQ = 5.5 // finer ripples across the surface
+const MICRO_AMP = 0.025 // subtle: about a sixth of the form amplitude
+
 // Build the organic body geometry once: an icosphere (even triangle distribution,
-// no UV-sphere pole pinching) displaced along its radius by low-frequency fbm.
+// no UV-sphere pole pinching) displaced along its radius by low-frequency fbm
+// (broad form) plus a finer octave (micro surface detail).
 const makeBodyGeometry = () => {
   const geo = new IcosahedronGeometry(1, 5) // ~20k tris, smooth base to displace
   const pos = geo.attributes.position
@@ -100,7 +109,8 @@ const makeBodyGeometry = () => {
   for (let i = 0; i < pos.count; i++) {
     v.fromBufferAttribute(pos, i).normalize()
     const form = fbm(v.x * FORM_FREQ, v.y * FORM_FREQ, v.z * FORM_FREQ, 3, 0.5)
-    const r = 1 + FORM_AMP * form
+    const micro = fbm(v.x * MICRO_FREQ, v.y * MICRO_FREQ, v.z * MICRO_FREQ, 2, 0.5)
+    const r = 1 + FORM_AMP * form + MICRO_AMP * micro
     pos.setXYZ(i, v.x * r, v.y * r, v.z * r)
   }
   geo.computeVertexNormals()
