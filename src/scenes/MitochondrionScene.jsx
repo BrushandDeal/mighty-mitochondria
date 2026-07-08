@@ -2,6 +2,7 @@ import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Sparkles, useScroll } from '@react-three/drei'
 import { IcosahedronGeometry, Vector3 } from 'three'
+import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion.js'
 import { ROTATION_SPEED, interiorFactor } from '../journeyRanges.js'
 
@@ -111,7 +112,11 @@ const MICRO_AMP = 0.025 // subtle: about a sixth of the form amplitude
 // no UV-sphere pole pinching) displaced along its radius by low-frequency fbm
 // (broad form) plus a finer octave (micro surface detail).
 const makeBodyGeometry = () => {
-  const geo = new IcosahedronGeometry(1, 5) // ~20k tris, smooth base to displace
+  // IcosahedronGeometry is non-indexed (unwelded vertices), which makes
+  // computeVertexNormals() below produce flat, faceted shading. Weld coincident
+  // vertices first so the recomputed normals are shared across faces and the
+  // displaced surface reads as a smooth, organic membrane rather than low-poly.
+  const geo = mergeVertices(new IcosahedronGeometry(1, 5)) // ~20k tris, welded
   const pos = geo.attributes.position
   const v = new Vector3()
   for (let i = 0; i < pos.count; i++) {
