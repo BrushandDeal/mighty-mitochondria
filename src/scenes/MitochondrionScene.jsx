@@ -1,6 +1,7 @@
-import { useRef } from 'react'
+import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { MeshDistortMaterial, Sparkles, useScroll } from '@react-three/drei'
+import { Sparkles, useScroll } from '@react-three/drei'
+import { IcosahedronGeometry, Vector3 } from 'three'
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion.js'
 import { ROTATION_SPEED, interiorFactor } from '../journeyRanges.js'
 
@@ -8,14 +9,15 @@ import { ROTATION_SPEED, interiorFactor } from '../journeyRanges.js'
  * MitochondrionScene — the bean-shaped outer body (JOURNEY.md Scenes 0 / 1).
  *
  * A semi-translucent, bean-shaped mitochondrion that slowly rotates, with a soft
- * cyan/teal glow, floating in dark space. Its surface is gently deformed by noise
- * (drei's MeshDistortMaterial) so it reads as an organic living structure rather
- * than a perfect geometric ellipsoid.
+ * cyan/teal glow, floating in dark space. Its surface is given organic, irregular
+ * contours by displacing the vertices of a base icosphere along their normals with
+ * layered value noise (the conventional "noise-displaced geometry" technique), so
+ * it reads as a living structure rather than a perfect geometric ellipsoid.
  *
  * As the camera slips inside for Scene 3, this whole outer body FADES OUT (shell,
- * halo, and its warm interior light) and its spin eases to a stop, so it does not
- * block or clip the interior reveal. Scroll back up and it fades in again. That
- * fade is driven by `interiorFactor` from journeyRanges.js.
+ * halo, and its interior light) and its spin eases to a stop, so it does not block
+ * or clip the interior reveal. Scroll back up and it fades in again. That fade is
+ * driven by `interiorFactor` from journeyRanges.js.
  *
  * Colour grammar: the base body and halo are cyan/teal STRUCTURE colours, NOT
  * gold. Gold stays reserved exclusively for energy (JOURNEY.md section 4), which
@@ -35,6 +37,76 @@ const SHELL_OPACITY = 0.55
 const HALO_OPACITY = 0.08
 const LIGHT_INTENSITY = 6
 
+// --- Organic form: noise-displaced geometry --------------------------------
+// A near-perfect ellipsoid reads as computer-generated. The conventional fix is
+// to displace the vertices of a base mesh along their normals with layered value
+// noise (fractional Brownian motion), then recompute normals. Deterministic (a
+// fixed hash, no Math.random), so the shape is stable across reloads.
+
+const hash3 = (x, y, z) => {
+  const s = Math.sin(x * 127.1 + y * 311.7 + z * 74.7) * 43758.5453123
+  return s - Math.floor(s) // 0..1
+}
+const fade = (t) => t * t * t * (t * (t * 6 - 15) + 10)
+const mix = (a, b, t) => a + (b - a) * t
+
+// Smooth 3D value noise: hash the 8 lattice corners and trilinearly blend them.
+const valueNoise = (x, y, z) => {
+  const ix = Math.floor(x)
+  const iy = Math.floor(y)
+  const iz = Math.floor(z)
+  const ux = fade(x - ix)
+  const uy = fade(y - iy)
+  const uz = fade(z - iz)
+  const n000 = hash3(ix, iy, iz)
+  const n100 = hash3(ix + 1, iy, iz)
+  const n010 = hash3(ix, iy + 1, iz)
+  const n110 = hash3(ix + 1, iy + 1, iz)
+  const n001 = hash3(ix, iy, iz + 1)
+  const n101 = hash3(ix + 1, iy, iz + 1)
+  const n011 = hash3(ix, iy + 1, iz + 1)
+  const n111 = hash3(ix + 1, iy + 1, iz + 1)
+  const x00 = mix(n000, n100, ux)
+  const x10 = mix(n010, n110, ux)
+  const x01 = mix(n001, n101, ux)
+  const x11 = mix(n011, n111, ux)
+  return mix(mix(x00, x10, uy), mix(x01, x11, uy), uz) // 0..1
+}
+
+// Fractional Brownian motion: sum octaves of noise, roughly -1..1.
+const fbm = (x, y, z, octaves, gain) => {
+  let amp = 0.5
+  let f = 1
+  let sum = 0
+  let norm = 0
+  for (let i = 0; i < octaves; i++) {
+    sum += amp * (valueNoise(x * f, y * f, z * f) * 2 - 1)
+    norm += amp
+    amp *= gain
+    f *= 2
+  }
+  return sum / norm
+}
+
+const FORM_FREQ = 1.6 // broad lumps, not high-frequency chatter
+const FORM_AMP = 0.14 // +/-14% radius: clearly irregular, still bean-shaped
+
+// Build the organic body geometry once: an icosphere (even triangle distribution,
+// no UV-sphere pole pinching) displaced along its radius by low-frequency fbm.
+const makeBodyGeometry = () => {
+  const geo = new IcosahedronGeometry(1, 5) // ~20k tris, smooth base to displace
+  const pos = geo.attributes.position
+  const v = new Vector3()
+  for (let i = 0; i < pos.count; i++) {
+    v.fromBufferAttribute(pos, i).normalize()
+    const form = fbm(v.x * FORM_FREQ, v.y * FORM_FREQ, v.z * FORM_FREQ, 3, 0.5)
+    const r = 1 + FORM_AMP * form
+    pos.setXYZ(i, v.x * r, v.y * r, v.z * r)
+  }
+  geo.computeVertexNormals()
+  return geo
+}
+
 export function MitochondrionScene() {
   const group = useRef()
   const shellMat = useRef()
@@ -42,6 +114,9 @@ export function MitochondrionScene() {
   const light = useRef()
   const scroll = useScroll()
   const prefersReducedMotion = usePrefersReducedMotion()
+
+  // The displaced organic geometry, built once.
+  const bodyGeometry = useMemo(() => makeBodyGeometry(), [])
 
   useFrame((_state, delta) => {
     // `vis` is 1 while outside the organelle and drops to 0 as we go inside.
@@ -61,29 +136,19 @@ export function MitochondrionScene() {
 
   return (
     <group ref={group}>
-      {/* The translucent outer body. A sphere squashed along two axes reads as
-          a bean-shaped ellipsoid. `transparent` + a low `opacity` let the inner
-          membrane show faintly through, and let it fade out on entry. */}
-      <mesh scale={[1.7, 1, 1]}>
-        <sphereGeometry args={[1, 64, 64]} />
-        {/* MeshDistortMaterial (drei) is the conventional R3F way to make a mesh
-            read organic: it displaces the surface with 3D noise in the vertex
-            shader, so the contour and surface gain irregular, gently shifting
-            variation instead of a perfect ellipsoid. The morph is kept gentle and
-            eases to frozen under reduced motion. It extends MeshStandardMaterial,
-            so the colour, emissive, and scroll-driven opacity fade all work as
-            before. */}
-        <MeshDistortMaterial
+      {/* The translucent outer body: the noise-displaced icosphere, squashed
+          along two axes into a bean. `transparent` + a low `opacity` let the
+          inner membrane show faintly through, and let it fade out on entry. */}
+      <mesh scale={[1.7, 1, 1]} geometry={bodyGeometry}>
+        <meshStandardMaterial
           ref={shellMat}
           color={BODY}
           emissive={BODY}
           emissiveIntensity={0.35}
           transparent
           opacity={SHELL_OPACITY}
-          roughness={0.35}
+          roughness={0.4}
           metalness={0.1}
-          distort={0.3}
-          speed={prefersReducedMotion ? 0 : 0.5}
         />
       </mesh>
 
