@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { ScrollControls, useScroll } from '@react-three/drei'
 import { EffectComposer, Bloom } from '@react-three/postprocessing'
@@ -452,6 +452,17 @@ export default function App() {
     if (el) el.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
+  // Populate bloomRef via a stable CALLBACK ref, never a ref object. Under React
+  // 19 `ref` is passed as a normal prop, and @react-three/postprocessing does
+  // JSON.stringify() over an effect's props to build a memo key. A ref OBJECT
+  // would hand it the mounted BloomEffect (which has circular parent/children
+  // refs) and crash ("Converting circular structure to JSON") on the next
+  // re-render, i.e. the moment a quiz gate is answered. JSON.stringify omits
+  // function values, so a callback ref sidesteps it entirely.
+  const setBloomRef = useCallback((effect) => {
+    bloomRef.current = effect
+  }, [])
+
   return (
     <div style={{ position: 'fixed', inset: 0 }}>
       <Canvas camera={{ position: [0, 0.5, 7], fov: 50 }}>
@@ -524,7 +535,7 @@ export default function App() {
             a soft, cheap, high-quality falloff. */}
         <EffectComposer>
           <Bloom
-            ref={bloomRef}
+            ref={setBloomRef}
             intensity={BLOOM_BASE}
             luminanceThreshold={0.6}
             luminanceSmoothing={0.3}
