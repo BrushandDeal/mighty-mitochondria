@@ -27,12 +27,12 @@ import { ROTATION_SPEED, interiorFactor } from '../journeyRanges.js'
  * InnerMembraneScene.jsx.
  */
 
-// The base body and its halo read as living STRUCTURE, so they use cyan/teal, not
-// gold. GOLD remains only for the floating dust below (a separate ambient element
-// left unchanged in this pass).
+// Everything in this scene reads as living STRUCTURE, so it stays in the cool
+// blue/teal/cyan palette. No gold anywhere here: gold is reserved exclusively for
+// energy (JOURNEY.md section 4), which the ATP synthase payoff later depends on.
 const BODY = '#33c2d4' // deep cyan/teal for the translucent shell and its inner light
 const HALO = '#46d0e2' // a slightly brighter cyan for the soft halo bloom
-const GOLD = '#ffcf70' // used ONLY by the floating dust (Sparkles) below
+const DUST = '#bcdfe8' // pale, cool near-neutral cyan for the floating dust
 
 const SHELL_OPACITY = 0.55
 const HALO_OPACITY = 0.08
@@ -241,7 +241,7 @@ export function MitochondrionScene() {
         size={2}
         speed={prefersReducedMotion ? 0 : 0.3}
         opacity={0.5}
-        color={GOLD}
+        color={DUST}
       />
     </group>
     </>
